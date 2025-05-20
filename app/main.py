@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
+from app.database import Base, engine
+
+# Import routers
 from app.project.routers import router as project_router
 from app.user.routers import router as user_router
 from app.permission.routers import router as permission_router
@@ -12,6 +15,9 @@ from app.defect_category.routers import router as defect_category_router
 from app.defect.routers import router as defect_router
 from app.defect_mark.routers import router as defect_mark_router
 from app.photo.routers import router as photo_router
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Backend Defect API",
