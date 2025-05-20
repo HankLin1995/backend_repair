@@ -1,0 +1,76 @@
+Table 專案 {
+  專案ID integer [pk] // project_id
+  專案名稱 varchar // project_name
+  建立時間 datetime // created_at
+}
+
+Table 使用者 {
+  使用者ID integer [pk] // user_id
+  LINE_ID text // line_id
+  姓名 varchar // name
+  信箱 varchar // email
+  公司名稱 varchar // company_name
+  建立時間 datetime // created_at
+}
+
+Table 權限 {
+  權限ID integer [pk] // project_user_id
+  專案ID integer [ref: > 專案.專案ID] // project_id
+  使用者ID integer [ref: > 使用者.使用者ID] // user_id
+  角色 varchar // user_role
+}
+
+Table 底圖 {
+  底圖ID integer [pk] // base_map_id
+  專案ID integer [ref: > 專案.專案ID] // project_id
+  名稱 varchar // map_name
+  檔案路徑 varchar // file_path
+}
+
+Table 廠商 {
+  廠商ID integer [pk] // vendor_id
+  廠商名稱 varchar // vendor_name
+  聯絡人 varchar // contact_person
+  電話 varchar // phone
+  負責項目 text // responsibilities
+}
+
+Table 缺失分類 {
+  分類ID integer [pk] // defect_category_id
+  分類名稱 varchar // category_name
+  分類說明 text // description
+}
+
+Table 缺失單 {
+  缺失單ID integer [pk] // defect_id
+  專案ID integer [ref: > 專案.專案ID] // project_id
+  填報者ID integer [ref: > 使用者.使用者ID] // submitted_id
+  缺失分類ID integer [ref: > 缺失分類.分類ID] // defect_category_id
+  缺失說明 text // defect_description
+  指派廠商ID integer [ref: > 廠商.廠商ID] // assigned_vendor_id
+  修繕說明 text // repair_description
+  修繕完成時間 datetime // repair_completed_at
+  確認狀態 varchar // confirmation_status
+  確認時間 datetime // confirmation_time
+  確認者ID integer [ref: > 使用者.使用者ID] // confirmer_id
+  建立時間 datetime // created_at
+  更新時間 datetime // updated_at
+}
+
+Table 缺失標記 {
+  標記ID integer [pk] // defect_mark_id
+  缺失單ID integer [ref: > 缺失單.缺失單ID] // defect_form_id
+  底圖ID integer [ref: > 底圖.底圖ID] // base_map_id
+  座標X float // coordinate_x
+  座標Y float // coordinate_y
+  座標比例 float // scale
+}
+
+Table 照片 {
+  照片ID integer [pk] // photo_id
+  缺失單ID integer [ref: > 缺失單.缺失單ID] // defect_form_id
+  描述 text // description
+  類型 varchar // photo_type
+  圖片連結 varchar // image_url
+  建立時間 datetime // created_at
+}

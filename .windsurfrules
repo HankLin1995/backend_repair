@@ -1,0 +1,79 @@
+# FastAPI 專案撰寫規則（開發團隊內部使用）
+
+本文件定義 FastAPI 專案的撰寫規則與架構約定，以利團隊協作、維護與擴充。
+
+## 專案結構規則（功能導向）
+
+app/
+├── main.py
+├── database.py
+├── utils.py
+├── user/
+│   ├── routers.py
+│   ├── schemas.py
+│   ├── models.py
+│   ├── crud.py
+└── tests/
+    ├── user/
+
+## 檔案角色說明
+
+- routers.py：定義 FastAPI 路由，不含業務邏輯。
+- schemas.py：定義 Pydantic 模型。
+- models.py：定義 SQLAlchemy 資料表。
+- crud.py：處理純粹的資料庫 CRUD 操作。
+- utils.py：共用工具函式。
+
+
+## 撰寫規則
+
+### routers.py
+
+- 使用 APIRouter。
+- 僅做 HTTP 請求參數與回應處理。
+- 所有業務邏輯委派給 services.py。
+
+### crud.py
+
+- 負責資料庫操作（單一查詢、建立、更新、刪除）。
+- 不做邏輯驗證、錯誤處理或資料格式處理。
+
+### schemas.py
+
+- 明確拆分 Create、Update、Out。
+- 使用 BaseModel，加入欄位驗證。
+- orm_mode 為 ORM 轉換開啟。
+
+### 命名慣例
+
+- 函式與變數：snake_case
+- 類別：PascalCase
+- 模組資料夾名稱：以功能命名（如 user、product）
+
+## 測試規則
+
+- 使用 pytest。
+- 每個模組一個對應測試資料夾。
+- 測試目標為 crud。
+- 使用 fixture 管理測試資料。
+
+## main.py
+
+- 為應用程式入口。
+- 負責註冊各功能模組的 router。
+
+範例：
+
+from fastapi import FastAPI  
+from user.routers import router as user_router  
+
+app = FastAPI()  
+app.include_router(user_router, prefix="/users", tags=["Users"])  
+
+## 其他補充
+
+- 所有業務邏輯應可在不依賴 FastAPI 的情況下測試。
+- models欄位要用英文
+- 測試時需要注意效能，不能讓測試過程太過緩慢
+- 可以先建立Dockerfile.test，再透過docker-compose up test --build確認結果
+- 請遵守TDD開發模式，先從一個模組完成後在接續開發其他模組
