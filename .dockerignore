@@ -1,0 +1,68 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Local development
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Project specific
+/static/*
+!/static/.gitkeep
+
+# Local development
+instance/
+.webassets-cache
+
+# Project specific
+/app/static/*
+!/app/static/.gitkeep
+
+# Large files that shouldn't be in the image
+*.db
+*.sqlite
+*.sqlite3
+
+# Local development files
+Dockerfile*
+docker-compose*
+.dockerignore

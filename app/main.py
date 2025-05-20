@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 from app.project.routers import router as project_router
 from app.user.routers import router as user_router
@@ -36,6 +38,10 @@ app.include_router(defect_category_router, prefix="/defect-categories", tags=["D
 app.include_router(defect_router, prefix="/defects", tags=["Defects"])
 app.include_router(defect_mark_router, prefix="/defect-marks", tags=["Defect Marks"])
 app.include_router(photo_router, prefix="/photos", tags=["Photos"])
+
+# Mount static files directory for photos
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
 async def root():
