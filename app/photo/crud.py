@@ -43,7 +43,7 @@ def update_photo(db: Session, photo_id: int, photo: PhotoUpdate) -> Optional[Pho
     if not db_photo:
         return None
     
-    update_data = photo.dict(exclude_unset=True)
+    update_data = photo.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_photo, key, value)
     

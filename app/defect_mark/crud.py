@@ -42,7 +42,7 @@ def update_defect_mark(db: Session, defect_mark_id: int, defect_mark: DefectMark
     if not db_defect_mark:
         return None
     
-    update_data = defect_mark.dict(exclude_unset=True)
+    update_data = defect_mark.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_defect_mark, key, value)
     
