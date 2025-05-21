@@ -1,4 +1,7 @@
 # Python
+# 忽略所有 __pycache__ 資料夾及其內容
+**/__pycache__/
+**/*.pyc
 __pycache__/
 *.py[cod]
 *$py.class

@@ -47,6 +47,8 @@ app.include_router(photo_router, prefix="/photos", tags=["Photos"])
 
 # Mount static files directory for photos
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")
