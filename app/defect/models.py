@@ -13,6 +13,7 @@ class Defect(Base):
     defect_description = Column(Text)
     assigned_vendor_id = Column(Integer, ForeignKey("vendors.vendor_id", ondelete="SET NULL"))
     repair_description = Column(Text)
+    expected_completion_date = Column(DateTime)
     repair_completed_at = Column(DateTime)
     confirmation_status = Column(String)
     confirmation_time = Column(DateTime)

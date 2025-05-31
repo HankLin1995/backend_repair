@@ -49,6 +49,7 @@ Table 缺失單 {
   缺失說明 text // defect_description
   指派廠商ID integer [ref: > 廠商.廠商ID] // assigned_vendor_id
   修繕說明 text // repair_description
+  預期完成日期 datetime // expected_completion_date
   修繕完成時間 datetime // repair_completed_at
   確認狀態 varchar // confirmation_status
   確認時間 datetime // confirmation_time

@@ -9,6 +9,7 @@ class DefectBase(BaseModel):
     defect_description: str
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
+    expected_completion_date: Optional[datetime] = None
     repair_completed_at: Optional[datetime] = None
     confirmation_status: Optional[str] = None
     confirmation_time: Optional[datetime] = None
@@ -22,6 +23,7 @@ class DefectUpdate(BaseModel):
     defect_description: Optional[str] = None
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
+    expected_completion_date: Optional[datetime] = None
     repair_completed_at: Optional[datetime] = None
     confirmation_status: Optional[str] = None
     confirmation_time: Optional[datetime] = None

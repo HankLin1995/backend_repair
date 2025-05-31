@@ -13,6 +13,7 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
+        expected_completion_date=datetime.utcnow(),
         confirmation_status="pending"
     )
     
@@ -93,22 +94,26 @@ def test_get_defects_with_filters(db, test_defect, test_project, test_user, test
 def test_update_defect(db, test_defect):
     # Create update data
     repair_description = "Test repair description"
+    expected_completion_date = datetime.utcnow()
     repair_completed_at = datetime.utcnow()
     confirmation_status = "completed"
     
-    defect_data = DefectUpdate(
+    update_data = DefectUpdate(
         repair_description=repair_description,
+        expected_completion_date=expected_completion_date,
         repair_completed_at=repair_completed_at,
         confirmation_status=confirmation_status
     )
     
     # Update defect
-    updated_defect = crud.update_defect(db, test_defect.defect_id, defect_data)
+    updated_defect = crud.update_defect(db, test_defect.defect_id, update_data)
     
     # Check defect was updated correctly
     assert updated_defect is not None
     assert updated_defect.defect_id == test_defect.defect_id
     assert updated_defect.repair_description == repair_description
+    assert updated_defect.expected_completion_date == expected_completion_date
+    assert updated_defect.repair_completed_at == repair_completed_at
     assert updated_defect.confirmation_status == confirmation_status
     # Check that repair_completed_at was set (can't check exact value due to microsecond differences)
     assert updated_defect.repair_completed_at is not None
@@ -198,13 +203,14 @@ def test_get_defect_stats(db, test_defect, test_project):
 
 # API Tests
 def test_api_create_defect(client, test_project, test_user, test_defect_category, test_vendor):
-    # Create test data
+    # Create defect data
     defect_data = {
         "project_id": test_project.project_id,
         "submitted_id": test_user.user_id,
         "defect_category_id": test_defect_category.defect_category_id,
         "defect_description": "API Test defect description",
         "assigned_vendor_id": test_vendor.vendor_id,
+        "expected_completion_date": datetime.utcnow().isoformat(),
         "confirmation_status": "pending"
     }
     
@@ -345,6 +351,7 @@ def test_api_update_defect(client, test_defect):
     # Create update data
     defect_data = {
         "repair_description": "API Test repair description",
+        "expected_completion_date": datetime.utcnow().isoformat(),
         "confirmation_status": "completed"
     }
     
