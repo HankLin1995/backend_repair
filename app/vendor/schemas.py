@@ -6,6 +6,8 @@ class VendorBase(BaseModel):
     contact_person: Optional[str] = None
     phone: Optional[str] = None
     responsibilities: Optional[str] = None
+    email: Optional[str] = None
+    line_id: Optional[str] = None
 
 class VendorCreate(VendorBase):
     pass

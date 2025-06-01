@@ -20,7 +20,9 @@ def create_vendor(db: Session, vendor: VendorCreate) -> Vendor:
         vendor_name=vendor.vendor_name,
         contact_person=vendor.contact_person,
         phone=vendor.phone,
-        responsibilities=vendor.responsibilities
+        responsibilities=vendor.responsibilities,
+        email=vendor.email,
+        line_id=vendor.line_id
     )
     db.add(db_vendor)
     db.commit()

@@ -10,6 +10,8 @@ class Vendor(Base):
     contact_person = Column(String)
     phone = Column(String)
     responsibilities = Column(Text)
+    email = Column(String)
+    line_id = Column(String)
     
     # Relationships
     defects = relationship("Defect", back_populates="vendor")

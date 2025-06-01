@@ -10,7 +10,9 @@ def test_create_vendor(db):
         vendor_name="Test Vendor",
         contact_person="Test Contact",
         phone="123-456-7890",
-        responsibilities="Test responsibilities"
+        responsibilities="Test responsibilities",
+        email="test_vendor@example.com",
+        line_id="lineid_vendor"
     )
     
     # Create vendor
@@ -21,6 +23,8 @@ def test_create_vendor(db):
     assert vendor.contact_person == "Test Contact"
     assert vendor.phone == "123-456-7890"
     assert vendor.responsibilities == "Test responsibilities"
+    assert vendor.email == "test_vendor@example.com"
+    assert vendor.line_id == "lineid_vendor"
     assert vendor.vendor_id is not None
 
 def test_get_vendor(db, test_vendor):
@@ -34,6 +38,65 @@ def test_get_vendor(db, test_vendor):
     assert vendor.contact_person == test_vendor.contact_person
     assert vendor.phone == test_vendor.phone
     assert vendor.responsibilities == test_vendor.responsibilities
+    assert vendor.email == test_vendor.email
+    assert vendor.line_id == test_vendor.line_id
+
+def test_update_vendor(db, test_vendor):
+    update_data = VendorUpdate(
+        vendor_name="Updated Vendor",
+        contact_person="Updated Contact",
+        phone="987-654-3210",
+        responsibilities="Updated responsibilities",
+        email="updated_vendor@example.com",
+        line_id="updated_lineid_vendor"
+    )
+    updated_vendor = crud.update_vendor(db, test_vendor.vendor_id, update_data)
+    assert updated_vendor.vendor_name == "Updated Vendor"
+    assert updated_vendor.contact_person == "Updated Contact"
+    assert updated_vendor.phone == "987-654-3210"
+    assert updated_vendor.responsibilities == "Updated responsibilities"
+    assert updated_vendor.email == "updated_vendor@example.com"
+    assert updated_vendor.line_id == "updated_lineid_vendor"
+
+def test_api_create_vendor(client):
+    vendor_data = {
+        "vendor_name": "API Vendor",
+        "contact_person": "API Contact",
+        "phone": "000-111-2222",
+        "responsibilities": "API responsibilities",
+        "email": "api_vendor@example.com",
+        "line_id": "api_lineid_vendor"
+    }
+    response = client.post("/vendors/", json=vendor_data)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["vendor_name"] == "API Vendor"
+    assert data["email"] == "api_vendor@example.com"
+    assert data["line_id"] == "api_lineid_vendor"
+
+def test_api_update_vendor(client, test_vendor):
+    update_data = {
+        "vendor_name": "API Updated Vendor",
+        "contact_person": "API Updated Contact",
+        "phone": "222-333-4444",
+        "responsibilities": "API updated responsibilities",
+        "email": "api_updated_vendor@example.com",
+        "line_id": "api_updated_lineid_vendor"
+    }
+    response = client.put(f"/vendors/{test_vendor.vendor_id}", json=update_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["vendor_name"] == "API Updated Vendor"
+    assert data["email"] == "api_updated_vendor@example.com"
+    assert data["line_id"] == "api_updated_lineid_vendor"
+
+def test_api_get_vendor(client, test_vendor):
+    response = client.get(f"/vendors/{test_vendor.vendor_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["vendor_id"] == test_vendor.vendor_id
+    assert "email" in data
+    assert "line_id" in data
 
 def test_get_vendors(db, test_vendor):
     # Create another vendor
