@@ -14,6 +14,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    permissions = relationship("Permission", back_populates="user")
+    # 註解掉與 Permission 的關聯，因為 Permission 模型中對應的關聯已被註解
+    # permissions = relationship("Permission", back_populates="user")
     submitted_defects = relationship("Defect", foreign_keys="Defect.submitted_id", back_populates="submitter")
     confirmed_defects = relationship("Defect", foreign_keys="Defect.confirmer_id", back_populates="confirmer")

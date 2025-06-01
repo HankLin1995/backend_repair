@@ -78,6 +78,7 @@ def delete_permission(db: Session, permission_id: int) -> bool:
 
 def get_permissions_with_details(db: Session, project_id: Optional[int] = None, user_email: Optional[str] = None) -> List[Dict[str, Any]]:
     """Get permissions with project and user details"""
+    # 使用顯式連接而不是依賴外鍵關係
     query = (
         db.query(
             Permission,
@@ -85,7 +86,8 @@ def get_permissions_with_details(db: Session, project_id: Optional[int] = None, 
             User.name.label("user_name")
         )
         .join(Project, Permission.project_id == Project.project_id)
-        .join(User, Permission.user_email == User.email)
+        # 使用顯式條件連接 User 表格
+        .outerjoin(User, Permission.user_email == User.email)
     )
     
     if project_id:
