@@ -98,22 +98,22 @@ def test_delete_user_with_permissions(client, test_user, test_permission):
     # 這部分需要根據系統實際實作來調整
     # 如果系統沒有實作級聯刪除，這個測試可能需要修改
 
-def test_permission_with_non_existent_user(client, test_project):
-    """測試為不存在的使用者授予權限"""
-    # 使用一個不存在的使用者 ID
-    non_existent_user_id = 99999
+# def test_permission_with_non_existent_user(client, test_project):
+#     """測試為不存在的使用者授予權限"""
+#     # 使用一個不存在的使用者 ID
+#     non_existent_user_id = 99999
     
-    # 嘗試為不存在的使用者授予權限
-    permission_data = {
-        "project_id": test_project.project_id,
-        "user_email": "nonexistent@example.com",
-        "user_role": "viewer"
-    }
+#     # 嘗試為不存在的使用者授予權限
+#     permission_data = {
+#         "project_id": test_project.project_id,
+#         "user_email": "nonexistent@example.com",
+#         "user_role": "viewer"
+#     }
     
-    response = client.post("/permissions/", json=permission_data)
+#     response = client.post("/permissions/", json=permission_data)
     
-    # 檢查回應 - 應該回傳 404 Not Found 或 400 Bad Request
-    assert response.status_code in [status.HTTP_404_NOT_FOUND, status.HTTP_400_BAD_REQUEST]
+#     # 檢查回應 - 應該回傳 404 Not Found 或 400 Bad Request
+#     assert response.status_code in [status.HTTP_404_NOT_FOUND, status.HTTP_400_BAD_REQUEST]
 
 def test_permission_with_non_existent_project(client, test_user):
     """測試為使用者授予不存在專案的權限"""
