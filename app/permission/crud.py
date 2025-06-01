@@ -104,7 +104,7 @@ def get_permissions_with_details(db: Session, project_id: Optional[int] = None, 
             "user_email": permission.user_email,
             "user_role": permission.user_role,
             "project_name": project_name,
-            "user_name": user_name
+            "user_name": user_name if user_name is not None else ""
         })
     
     return results

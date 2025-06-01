@@ -19,6 +19,6 @@ class PermissionOut(PermissionBase):
 
 class PermissionWithDetailsOut(PermissionOut):
     project_name: str
-    user_name: str
+    user_name: Optional[str] = ""
     
     model_config = {"from_attributes": True}
