@@ -82,6 +82,7 @@ def test_user(db):
         line_id="test_line_id",
         email="test@example.com",
         company_name="Test Company",
+        avatar_path="static/avatar/default.png",
         created_at=datetime.utcnow()
     )
     db.add(user)

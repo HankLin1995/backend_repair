@@ -20,5 +20,6 @@ class PermissionOut(PermissionBase):
 class PermissionWithDetailsOut(PermissionOut):
     project_name: str
     user_name: Optional[str] = ""
+    avatar_path: Optional[str] = "static/avatar/default.png"
     
     model_config = {"from_attributes": True}

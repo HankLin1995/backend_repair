@@ -28,7 +28,8 @@ def create_user(db: Session, user: UserCreate) -> User:
         name=user.name,
         email=user.email,
         company_name=user.company_name,
-        line_id=user.line_id
+        line_id=user.line_id,
+        avatar_path=user.avatar_path
     )
     db.add(db_user)
     db.commit()

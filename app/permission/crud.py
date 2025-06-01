@@ -83,7 +83,8 @@ def get_permissions_with_details(db: Session, project_id: Optional[int] = None, 
         db.query(
             Permission,
             Project.project_name,
-            User.name.label("user_name")
+            User.name.label("user_name"),
+            User.avatar_path
         )
         .join(Project, Permission.project_id == Project.project_id)
         # 使用顯式條件連接 User 表格
@@ -97,14 +98,15 @@ def get_permissions_with_details(db: Session, project_id: Optional[int] = None, 
         query = query.filter(Permission.user_email == user_email)
     
     results = []
-    for permission, project_name, user_name in query:
+    for permission, project_name, user_name, avatar_path in query:
         results.append({
             "permission_id": permission.permission_id,
             "project_id": permission.project_id,
             "user_email": permission.user_email,
             "user_role": permission.user_role,
             "project_name": project_name,
-            "user_name": user_name if user_name is not None else ""
+            "user_name": user_name if user_name is not None else "",
+            "avatar_path": avatar_path if avatar_path is not None else "static/avatar/default.png"
         })
     
     return results

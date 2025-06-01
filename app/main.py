@@ -45,10 +45,15 @@ app.include_router(defect_router, prefix="/defects", tags=["Defects"])
 app.include_router(defect_mark_router, prefix="/defect-marks", tags=["Defect Marks"])
 app.include_router(photo_router, prefix="/photos", tags=["Photos"])
 
-# Mount static files directory for photos
-static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+# Mount static files directory for photos and avatars
+# 使用專案根目錄的 static 資料夾
+static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir)
+# 確保 avatar 目錄存在
+avatar_dir = os.path.join(static_dir, "avatar")
+if not os.path.exists(avatar_dir):
+    os.makedirs(avatar_dir)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/")

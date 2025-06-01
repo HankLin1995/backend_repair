@@ -7,6 +7,7 @@ class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     company_name: Optional[str] = None
     line_id: Optional[str] = None
+    avatar_path: Optional[str] = "static/avatar/default.png"
 
 class UserCreate(UserBase):
     pass
@@ -16,6 +17,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     company_name: Optional[str] = None
     line_id: Optional[str] = None
+    avatar_path: Optional[str] = None
 
 class UserOut(UserBase):
     user_id: int

@@ -11,6 +11,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String)
     company_name = Column(String)
+    avatar_path = Column(String, default="static/avatar/default.png")
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
