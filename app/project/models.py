@@ -9,6 +9,7 @@ class Project(Base):
     project_id = Column(Integer, primary_key=True, index=True)
     project_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    image_path = Column(String, default="static/project/default.png")
     
     # Relationships
     permissions = relationship("Permission", back_populates="project")

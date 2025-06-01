@@ -18,7 +18,10 @@ def get_projects(db: Session, skip: int = 0, limit: int = 100) -> List[Project]:
 
 def create_project(db: Session, project: ProjectCreate) -> Project:
     """Create a new project"""
-    db_project = Project(project_name=project.project_name)
+    db_project = Project(
+        project_name=project.project_name,
+        image_path=project.image_path
+    )
     db.add(db_project)
     db.commit()
     db.refresh(db_project)
@@ -33,7 +36,6 @@ def update_project(db: Session, project_id: int, project: ProjectUpdate) -> Opti
     update_data = project.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_project, key, value)
-    
     db.commit()
     db.refresh(db_project)
     return db_project

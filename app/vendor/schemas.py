@@ -17,6 +17,8 @@ class VendorUpdate(BaseModel):
     contact_person: Optional[str] = None
     phone: Optional[str] = None
     responsibilities: Optional[str] = None
+    email: Optional[str] = None
+    line_id: Optional[str] = None
 
 class VendorOut(VendorBase):
     vendor_id: int

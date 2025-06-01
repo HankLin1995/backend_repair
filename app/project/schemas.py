@@ -4,16 +4,19 @@ from typing import Optional, List
 
 class ProjectBase(BaseModel):
     project_name: str
+    image_path: Optional[str] = "static/project/default.png"
 
 class ProjectCreate(ProjectBase):
     pass
 
 class ProjectUpdate(ProjectBase):
     project_name: Optional[str] = None
+    image_path: Optional[str] = None
 
 class ProjectOut(ProjectBase):
     project_id: int
     created_at: datetime
+    image_path: Optional[str] = "static/project/default.png"
     
     model_config = {"from_attributes": True}
 

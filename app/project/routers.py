@@ -5,6 +5,10 @@ from typing import List, Optional
 from app.database import get_db
 from app.project import crud, schemas
 from app.utils import paginate_query
+from fastapi import UploadFile, File
+import shutil
+import os
+from pathlib import Path
 
 router = APIRouter()
 
@@ -38,6 +42,31 @@ def read_project_with_counts(project_id: int, db: Session = Depends(get_db)):
     if project_data is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project_data
+
+@router.post("/{project_id}/image", response_model=schemas.ProjectOut)
+def upload_project_image(project_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Upload a project image"""
+    db_project = crud.get_project(db, project_id=project_id)
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # 確保目錄存在
+    image_dir = Path("static/project")
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    # 建立檔案名稱 (使用 project_id)
+    file_extension = os.path.splitext(file.filename)[1] if file.filename else ".png"
+    image_filename = f"project_{project_id}{file_extension}"
+    image_path = f"static/project/{image_filename}"
+
+    # 儲存檔案
+    with open(image_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # 更新專案的圖片路徑
+    update_data = schemas.ProjectUpdate(image_path=image_path)
+    updated_project = crud.update_project(db, project_id=project_id, project=update_data)
+    return updated_project
 
 @router.get("/{project_id}/with-roles", response_model=schemas.ProjectWithUsersOut)
 def read_project_roles(project_id: int, db: Session = Depends(get_db)):
