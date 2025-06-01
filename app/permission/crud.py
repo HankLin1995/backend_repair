@@ -58,9 +58,16 @@ def update_permission(db: Session, permission_id: int, permission: PermissionUpd
     if not db_permission:
         return None
     
+    # 保存原始 project_id
+    original_project_id = db_permission.project_id
+    
     update_data = permission.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_permission, key, value)
+    
+    # 確保 project_id 不會被設為 None
+    if db_permission.project_id is None:
+        db_permission.project_id = original_project_id
     
     db.commit()
     db.refresh(db_permission)

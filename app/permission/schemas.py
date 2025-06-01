@@ -10,6 +10,8 @@ class PermissionCreate(PermissionBase):
     pass
 
 class PermissionUpdate(BaseModel):
+    project_id: int
+    user_email: str
     user_role: str
 
 class PermissionOut(PermissionBase):
