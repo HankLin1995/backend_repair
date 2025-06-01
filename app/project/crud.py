@@ -70,3 +70,67 @@ def get_project_with_counts(db: Session, project_id: int) -> Optional[Dict[str, 
     }
     
     return result
+
+def get_project_with_users(db: Session, project_id: int) -> Optional[Dict[str, Any]]:
+    """Get a project with users"""
+    project = get_project(db, project_id)
+    if not project:
+        return None
+    
+    # Get project's users and roles
+    users_query = (
+        db.query(User, Permission.user_role)
+        .join(Permission, Permission.project_id == Project.project_id)
+        .join(User, User.email == Permission.user_email)
+        .filter(Project.project_id == project_id)
+    )
+    
+    users_data = []
+    for user, role in users_query:
+        users_data.append({
+            "user_id": user.user_id,
+            "name": user.name,
+            "email": user.email,
+            "company_name": user.company_name,
+            "line_id": user.line_id,
+            "created_at": user.created_at,
+            "role": role
+        })
+    
+    # Create result dictionary
+    result = {
+        "project_id": project.project_id,
+        "project_name": project.project_name,
+        "created_at": project.created_at,
+        "users": users_data
+    }
+    
+    return result
+
+def get_project_roles(db: Session, project_id: int) -> Optional[Dict[str, Any]]:
+    """獲取專案中的使用者電子郵件和對應的角色"""
+    project = get_project(db, project_id)
+    if not project:
+        return None
+    
+    # 獲取專案中的所有使用者電子郵件和對應的角色
+    user_roles_query = (
+        db.query(Permission.user_email, Permission.user_role)
+        .filter(Permission.project_id == project_id)
+        .all()
+    )
+    
+    # 創建使用者角色列表
+    user_roles = [
+        {"email": email, "role": role}
+        for email, role in user_roles_query
+    ]
+    
+    # 創建結果字典
+    result = {
+        "project_id": project.project_id,
+        "project_name": project.project_name,
+        "user_roles": user_roles
+    }
+    
+    return result

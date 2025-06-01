@@ -39,6 +39,14 @@ def read_project_with_counts(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
     return project_data
 
+@router.get("/{project_id}/with-roles", response_model=schemas.ProjectWithUsersOut)
+def read_project_roles(project_id: int, db: Session = Depends(get_db)):
+    """獲取專案中存在的角色"""
+    project_roles = crud.get_project_roles(db, project_id=project_id)
+    if project_roles is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project_roles
+
 @router.put("/{project_id}", response_model=schemas.ProjectOut)
 def update_project(
     project_id: int, project: schemas.ProjectUpdate, db: Session = Depends(get_db)
