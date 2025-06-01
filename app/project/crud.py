@@ -40,12 +40,19 @@ def update_project(db: Session, project_id: int, project: ProjectUpdate) -> Opti
     db.refresh(db_project)
     return db_project
 
+import os
+
 def delete_project(db: Session, project_id: int) -> bool:
-    """Delete a project"""
+    """Delete a project (and its image file if exists)"""
     db_project = get_project(db, project_id)
     if not db_project:
         return False
-    
+    # 刪除圖片檔案（若不是 default.png）
+    if db_project.image_path and db_project.image_path != "static/project/default.png" and os.path.exists(db_project.image_path):
+        try:
+            os.remove(db_project.image_path)
+        except Exception:
+            pass
     db.delete(db_project)
     db.commit()
     return True

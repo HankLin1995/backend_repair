@@ -127,22 +127,68 @@ import io
 from fastapi import status
 
 def test_api_upload_project_image(client, test_project):
-    # 模擬一個圖片檔案
-    fake_image_content = b"fake image data"
-    files = {"file": ("test.png", io.BytesIO(fake_image_content), "image/png")}
+    # 建立一個有效的 PNG 圖片內容
+    from PIL import Image
+    import io
+    img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+    files = {"file": ("test.png", img_bytes, "image/png")}
     response = client.post(f"/projects/{test_project.project_id}/image", files=files)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["image_path"].startswith("static/project/project_")
     assert data["image_path"].endswith(".png")
 
+
+# def test_api_upload_project_image_crop_size(client, test_project):
+#     # 上傳一張圖片並指定裁切尺寸
+#     from PIL import Image
+#     import io, os
+#     width, height = 256, 128
+#     img = Image.new("RGB", (400, 400), color=(0, 255, 0))
+#     img_bytes = io.BytesIO()
+#     img.save(img_bytes, format="PNG")
+#     img_bytes.seek(0)
+#     files = {"file": ("test.png", img_bytes, "image/png")}
+#     response = client.post(
+#         f"/projects/{test_project.project_id}/image?width={width}&height={height}", files=files
+#     )
+#     assert response.status_code == status.HTTP_200_OK
+#     data = response.json()
+#     image_path = data["image_path"]
+#     # 驗證圖片尺寸
+#     with Image.open(image_path) as cropped_img:
+#         assert cropped_img.size == (width, height)
+
+
+def test_api_delete_project_also_remove_image(client, db):
+    # 建立一個 project 並上傳圖片
+    from PIL import Image
+    import io, os
+    from app.project import crud
+    from app.project.schemas import ProjectCreate
+    project = crud.create_project(db, ProjectCreate(project_name="del-img-test"))
+    img = Image.new("RGB", (100, 100), color=(0, 0, 255))
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+    files = {"file": ("test.png", img_bytes, "image/png")}
+    upload_resp = client.post(f"/projects/{project.project_id}/image", files=files)
+    assert upload_resp.status_code == 200
+    image_path = upload_resp.json()["image_path"]
+    assert os.path.exists(image_path)
+    # 刪除 project
+    del_resp = client.delete(f"/projects/{project.project_id}")
+    assert del_resp.status_code == status.HTTP_204_NO_CONTENT
+    # 圖片檔案也應該被刪除
+    assert not os.path.exists(image_path)
+
 def test_api_delete_project(client, test_project):
     # Send request
     response = client.delete(f"/projects/{test_project.project_id}")
-    
-    # Check response
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    
     # Check project no longer exists
-    response = client.get(f"/projects/{test_project.project_id}")
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    get_response = client.get(f"/projects/{test_project.project_id}")
+    assert get_response.status_code == status.HTTP_404_NOT_FOUND
