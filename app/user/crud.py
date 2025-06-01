@@ -14,6 +14,10 @@ def get_user_by_line_id(db: Session, line_id: str) -> Optional[User]:
     """Get a single user by LINE ID"""
     return db.query(User).filter(User.line_id == line_id).first()
 
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    """Get a single user by email"""
+    return db.query(User).filter(User.email == email).first()
+
 def get_users(db: Session, skip: int = 0, limit: int = 100) -> List[User]:
     """Get a list of users with pagination"""
     return db.query(User).offset(skip).limit(limit).all()
@@ -65,7 +69,8 @@ def get_user_with_projects(db: Session, user_id: int) -> Optional[Dict[str, Any]
     projects_query = (
         db.query(Project, Permission.user_role)
         .join(Permission, Permission.project_id == Project.project_id)
-        .filter(Permission.user_id == user_id)
+        .join(User, User.email == Permission.user_email)
+        .filter(User.user_id == user_id)
     )
     
     projects_data = []

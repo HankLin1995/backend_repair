@@ -18,9 +18,9 @@ def get_permissions_by_project(db: Session, project_id: int) -> List[Permission]
     """Get all permissions for a specific project"""
     return db.query(Permission).filter(Permission.project_id == project_id).all()
 
-def get_permissions_by_user(db: Session, user_id: int) -> List[Permission]:
+def get_permissions_by_user(db: Session, user_email: str) -> List[Permission]:
     """Get all permissions for a specific user"""
-    return db.query(Permission).filter(Permission.user_id == user_id).all()
+    return db.query(Permission).filter(Permission.user_email == user_email).all()
 
 def create_permission(db: Session, permission: PermissionCreate) -> Permission:
     """Create a new permission"""
@@ -29,7 +29,7 @@ def create_permission(db: Session, permission: PermissionCreate) -> Permission:
         db.query(Permission)
         .filter(
             Permission.project_id == permission.project_id,
-            Permission.user_id == permission.user_id
+            Permission.user_email == permission.user_email
         )
         .first()
     )
@@ -44,7 +44,7 @@ def create_permission(db: Session, permission: PermissionCreate) -> Permission:
     # Create new permission
     db_permission = Permission(
         project_id=permission.project_id,
-        user_id=permission.user_id,
+        user_email=permission.user_email,
         user_role=permission.user_role
     )
     db.add(db_permission)
@@ -76,7 +76,7 @@ def delete_permission(db: Session, permission_id: int) -> bool:
     db.commit()
     return True
 
-def get_permissions_with_details(db: Session, project_id: Optional[int] = None, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def get_permissions_with_details(db: Session, project_id: Optional[int] = None, user_email: Optional[str] = None) -> List[Dict[str, Any]]:
     """Get permissions with project and user details"""
     query = (
         db.query(
@@ -85,21 +85,21 @@ def get_permissions_with_details(db: Session, project_id: Optional[int] = None, 
             User.name.label("user_name")
         )
         .join(Project, Permission.project_id == Project.project_id)
-        .join(User, Permission.user_id == User.user_id)
+        .join(User, Permission.user_email == User.email)
     )
     
     if project_id:
         query = query.filter(Permission.project_id == project_id)
     
-    if user_id:
-        query = query.filter(Permission.user_id == user_id)
+    if user_email:
+        query = query.filter(Permission.user_email == user_email)
     
     results = []
     for permission, project_name, user_name in query:
         results.append({
             "permission_id": permission.permission_id,
             "project_id": permission.project_id,
-            "user_id": permission.user_id,
+            "user_email": permission.user_email,
             "user_role": permission.user_role,
             "project_name": project_name,
             "user_name": user_name

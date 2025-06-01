@@ -95,7 +95,7 @@ def test_permission(db, test_project, test_user):
     
     permission = Permission(
         project_id=test_project.project_id,
-        user_id=test_user.user_id,
+        user_email=test_user.email,
         user_role="admin"
     )
     db.add(permission)

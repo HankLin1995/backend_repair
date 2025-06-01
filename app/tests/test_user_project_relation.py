@@ -43,9 +43,13 @@ def test_create_user_with_project_permission(client, db, test_project):
     user_id = response.json()["user_id"]
     
     # 為使用者授予專案權限
+    # 先獲取使用者的 email
+    response_user = client.get(f"/users/{user_id}")
+    user_email = response_user.json()["email"]
+    
     permission_data = {
         "project_id": test_project.project_id,
-        "user_id": user_id,
+        "user_email": user_email,
         "user_role": "viewer"
     }
     
@@ -102,7 +106,7 @@ def test_permission_with_non_existent_user(client, test_project):
     # 嘗試為不存在的使用者授予權限
     permission_data = {
         "project_id": test_project.project_id,
-        "user_id": non_existent_user_id,
+        "user_email": "nonexistent@example.com",
         "user_role": "viewer"
     }
     
@@ -119,7 +123,7 @@ def test_permission_with_non_existent_project(client, test_user):
     # 嘗試授予不存在專案的權限
     permission_data = {
         "project_id": non_existent_project_id,
-        "user_id": test_user.user_id,
+        "user_email": test_user.email,
         "user_role": "viewer"
     }
     

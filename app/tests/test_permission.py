@@ -8,7 +8,7 @@ def test_create_permission(db, test_project, test_user):
     # Create test data
     permission_data = PermissionCreate(
         project_id=test_project.project_id,
-        user_id=test_user.user_id,
+        user_email=test_user.email,
         user_role="editor"
     )
     
@@ -17,7 +17,7 @@ def test_create_permission(db, test_project, test_user):
     
     # Check permission was created correctly
     assert permission.project_id == test_project.project_id
-    assert permission.user_id == test_user.user_id
+    assert permission.user_email == test_user.email
     assert permission.user_role == "editor"
     assert permission.permission_id is not None
 
@@ -29,7 +29,7 @@ def test_get_permission(db, test_permission):
     assert permission is not None
     assert permission.permission_id == test_permission.permission_id
     assert permission.project_id == test_permission.project_id
-    assert permission.user_id == test_permission.user_id
+    assert permission.user_email == test_permission.user_email
     assert permission.user_role == test_permission.user_role
 
 def test_get_permissions(db, test_permission):
@@ -47,7 +47,7 @@ def test_get_permissions(db, test_permission):
     
     permission_data = PermissionCreate(
         project_id=test_permission.project_id,
-        user_id=new_user.user_id,
+        user_email=new_user.email,
         user_role="viewer"
     )
     crud.create_permission(db, permission_data)
@@ -68,18 +68,18 @@ def test_get_permissions_by_project(db, test_permission):
     assert len(permissions) == 1
     assert permissions[0].permission_id == test_permission.permission_id
     assert permissions[0].project_id == test_permission.project_id
-    assert permissions[0].user_id == test_permission.user_id
+    assert permissions[0].user_email == test_permission.user_email
     assert permissions[0].user_role == test_permission.user_role
 
 def test_get_permissions_by_user(db, test_permission):
     # Get permissions by user
-    permissions = crud.get_permissions_by_user(db, test_permission.user_id)
+    permissions = crud.get_permissions_by_user(db, test_permission.user_email)
     
     # Check permissions were retrieved correctly
     assert len(permissions) == 1
     assert permissions[0].permission_id == test_permission.permission_id
     assert permissions[0].project_id == test_permission.project_id
-    assert permissions[0].user_id == test_permission.user_id
+    assert permissions[0].user_email == test_permission.user_email
     assert permissions[0].user_role == test_permission.user_role
 
 def test_update_permission(db, test_permission):
@@ -93,7 +93,7 @@ def test_update_permission(db, test_permission):
     assert updated_permission is not None
     assert updated_permission.permission_id == test_permission.permission_id
     assert updated_permission.project_id == test_permission.project_id
-    assert updated_permission.user_id == test_permission.user_id
+    assert updated_permission.user_email == test_permission.user_email
     assert updated_permission.user_role == "viewer"
 
 def test_delete_permission(db, test_permission):
@@ -116,7 +116,7 @@ def test_get_permissions_with_details(db, test_permission, test_project, test_us
     permission_data = permissions_data[0]
     assert permission_data["permission_id"] == test_permission.permission_id
     assert permission_data["project_id"] == test_permission.project_id
-    assert permission_data["user_id"] == test_permission.user_id
+    assert permission_data["user_email"] == test_permission.user_email
     assert permission_data["user_role"] == test_permission.user_role
     assert permission_data["project_name"] == test_project.project_name
     assert permission_data["user_name"] == test_user.name
@@ -126,7 +126,7 @@ def test_api_create_permission(client, test_project, test_user):
     # Create test data
     permission_data = {
         "project_id": test_project.project_id,
-        "user_id": test_user.user_id,
+        "user_email": test_user.email,
         "user_role": "editor"
     }
     
@@ -137,15 +137,15 @@ def test_api_create_permission(client, test_project, test_user):
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["project_id"] == test_project.project_id
-    assert data["user_id"] == test_user.user_id
+    assert data["user_email"] == test_user.email
     assert data["user_role"] == "editor"
     assert "permission_id" in data
 
 def test_api_create_permission_invalid_project(client, test_user):
     # Create test data with invalid project ID
     permission_data = {
-        "project_id": 999,
-        "user_id": test_user.user_id,
+        "project_id": 999,  # Non-existent project ID
+        "user_email": test_user.email,
         "user_role": "editor"
     }
     
@@ -156,10 +156,10 @@ def test_api_create_permission_invalid_project(client, test_user):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 def test_api_create_permission_invalid_user(client, test_project):
-    # Create test data with invalid user ID
+    # Create test data with invalid user email
     permission_data = {
         "project_id": test_project.project_id,
-        "user_id": 999,
+        "user_email": "nonexistent@example.com",  # Non-existent user email
         "user_role": "editor"
     }
     
@@ -180,8 +180,9 @@ def test_api_read_permissions(client, test_permission):
     assert len(data) >= 1
     assert any(p["permission_id"] == test_permission.permission_id for p in data)
     assert any(p["user_role"] == test_permission.user_role for p in data)
+    assert any(p["user_email"] == test_permission.user_email for p in data)
 
-def test_api_read_permissions_by_project(client, test_permission, test_project):
+def test_api_read_permissions_by_project(client, test_permission, test_project, test_user):
     # Send request
     response = client.get(f"/permissions/?project_id={test_project.project_id}")
     
@@ -192,12 +193,13 @@ def test_api_read_permissions_by_project(client, test_permission, test_project):
     assert len(data) == 1
     assert data[0]["permission_id"] == test_permission.permission_id
     assert data[0]["project_id"] == test_project.project_id
-    assert data[0]["user_id"] == test_permission.user_id
-    assert data[0]["user_role"] == test_permission.user_role
+    assert data[0]["user_email"] == test_permission.user_email
+    assert data[0]["project_name"] == test_project.project_name
+    assert data[0]["user_name"] == test_user.name
 
 def test_api_read_permissions_by_user(client, test_permission, test_user):
     # Send request
-    response = client.get(f"/permissions/?user_id={test_user.user_id}")
+    response = client.get(f"/permissions/?user_email={test_user.email}")
     
     # Check response
     assert response.status_code == status.HTTP_200_OK
@@ -206,7 +208,7 @@ def test_api_read_permissions_by_user(client, test_permission, test_user):
     assert len(data) == 1
     assert data[0]["permission_id"] == test_permission.permission_id
     assert data[0]["project_id"] == test_permission.project_id
-    assert data[0]["user_id"] == test_user.user_id
+    assert data[0]["user_email"] == test_user.email
     assert data[0]["user_role"] == test_permission.user_role
 
 def test_api_read_permission(client, test_permission):
@@ -218,7 +220,7 @@ def test_api_read_permission(client, test_permission):
     data = response.json()
     assert data["permission_id"] == test_permission.permission_id
     assert data["project_id"] == test_permission.project_id
-    assert data["user_id"] == test_permission.user_id
+    assert data["user_email"] == test_permission.user_email
     assert data["user_role"] == test_permission.user_role
 
 def test_api_read_permission_not_found(client):
@@ -242,7 +244,7 @@ def test_api_update_permission(client, test_permission):
     data = response.json()
     assert data["permission_id"] == test_permission.permission_id
     assert data["project_id"] == test_permission.project_id
-    assert data["user_id"] == test_permission.user_id
+    assert data["user_email"] == test_permission.user_email
     assert data["user_role"] == "viewer"
 
 def test_api_update_permission_not_found(client):

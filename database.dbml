@@ -16,7 +16,7 @@ Table 使用者 {
 Table 權限 {
   權限ID integer [pk] // project_user_id
   專案ID integer [ref: > 專案.專案ID] // project_id
-  使用者ID integer [ref: > 使用者.使用者ID] // user_id
+  信箱 varchar // user_email
   角色 varchar // user_role
 }
 

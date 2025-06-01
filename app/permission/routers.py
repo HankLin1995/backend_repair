@@ -17,14 +17,16 @@ def create_permission(permission: schemas.PermissionCreate, db: Session = Depend
     check_exists(db, Project, permission.project_id, "project_id")
     
     # Check if user exists
-    check_exists(db, User, permission.user_id, "user_id")
+    user = db.query(User).filter(User.email == permission.user_email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with email {permission.user_email} not found")
     
     return crud.create_permission(db=db, permission=permission)
 
 @router.get("/", response_model=List[schemas.PermissionWithDetailsOut])
 def read_permissions(
     project_id: Optional[int] = None,
-    user_id: Optional[int] = None,
+    user_email: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db)
@@ -34,12 +36,14 @@ def read_permissions(
         # Check if project exists
         check_exists(db, Project, project_id, "project_id")
     
-    if user_id:
+    if user_email:
         # Check if user exists
-        check_exists(db, User, user_id, "user_id")
+        user = db.query(User).filter(User.email == user_email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail=f"User with email {user_email} not found")
     
     permissions = crud.get_permissions_with_details(
-        db, project_id=project_id, user_id=user_id
+        db, project_id=project_id, user_email=user_email
     )
     
     # Apply pagination manually since we're using a custom query
