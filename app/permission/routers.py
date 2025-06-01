@@ -16,10 +16,10 @@ def create_permission(permission: schemas.PermissionCreate, db: Session = Depend
     # Check if project exists
     check_exists(db, Project, permission.project_id, "project_id")
     
-    # Check if user exists
-    user = db.query(User).filter(User.email == permission.user_email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail=f"User with email {permission.user_email} not found")
+    # 注釋掉使用者存在性檢查，因為我們已經移除了外鍵關係
+    # user = db.query(User).filter(User.email == permission.user_email).first()
+    # if not user:
+    #     raise HTTPException(status_code=404, detail=f"User with email {permission.user_email} not found")
     
     return crud.create_permission(db=db, permission=permission)
 
@@ -36,11 +36,12 @@ def read_permissions(
         # Check if project exists
         check_exists(db, Project, project_id, "project_id")
     
-    if user_email:
-        # Check if user exists
-        user = db.query(User).filter(User.email == user_email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail=f"User with email {user_email} not found")
+    # 注釋掉使用者存在性檢查，因為我們已經移除了外鍵關係
+    # if user_email:
+    #     # Check if user exists
+    #     user = db.query(User).filter(User.email == user_email).first()
+    #     if not user:
+    #         raise HTTPException(status_code=404, detail=f"User with email {user_email} not found")
     
     permissions = crud.get_permissions_with_details(
         db, project_id=project_id, user_email=user_email
