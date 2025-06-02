@@ -84,7 +84,11 @@ def test_get_permissions_by_user(db, test_permission):
 
 def test_update_permission(db, test_permission):
     # Create update data
-    permission_data = PermissionUpdate(user_role="viewer")
+    permission_data = PermissionUpdate(
+        project_id=test_permission.project_id,
+        user_email=test_permission.user_email,
+        user_role="viewer"
+    )
     
     # Update permission
     updated_permission = crud.update_permission(db, test_permission.permission_id, permission_data)
@@ -233,6 +237,8 @@ def test_api_read_permission_not_found(client):
 def test_api_update_permission(client, test_permission):
     # Create update data
     permission_data = {
+        "user_email": test_permission.user_email,
+        "project_id": test_permission.project_id,
         "user_role": "viewer"
     }
     
@@ -250,6 +256,8 @@ def test_api_update_permission(client, test_permission):
 def test_api_update_permission_not_found(client):
     # Create update data
     permission_data = {
+        "user_email": "test@example.com",
+        "project_id": 1,
         "user_role": "viewer"
     }
     
