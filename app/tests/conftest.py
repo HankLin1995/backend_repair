@@ -156,10 +156,9 @@ def test_defect(db, test_project, test_user, test_defect_category, test_vendor):
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
-        expected_completion_date=datetime.utcnow(),
-        confirmation_status="pending",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        expected_completion_day=7,
+        status="等待中",
+        created_at=datetime.utcnow()
     )
     db.add(defect)
     db.commit()
@@ -171,7 +170,7 @@ def test_defect_mark(db, test_defect, test_base_map):
     from app.defect_mark.models import DefectMark
     
     defect_mark = DefectMark(
-        defect_form_id=test_defect.defect_id,
+        defect_id=test_defect.defect_id,
         base_map_id=test_base_map.base_map_id,
         coordinate_x=100.0,
         coordinate_y=200.0,
@@ -187,9 +186,9 @@ def test_photo(db, test_defect):
     from app.photo.models import Photo
     
     photo = Photo(
-        defect_form_id=test_defect.defect_id,
+        related_type="缺失單",
+        related_id=test_defect.defect_id,
         description="Test photo description",
-        photo_type="before",
         image_url="/path/to/image.jpg",
         created_at=datetime.utcnow()
     )
@@ -197,3 +196,36 @@ def test_photo(db, test_defect):
     db.commit()
     db.refresh(photo)
     return photo
+
+@pytest.fixture
+def test_improvement(db, test_defect, test_user):
+    from app.improvement.models import Improvement
+    
+    improvement = Improvement(
+        defect_id=test_defect.defect_id,
+        submitter_id=test_user.user_id,
+        content="Test improvement content",
+        improvement_date="2023-01-01",
+        created_at=datetime.utcnow()
+    )
+    db.add(improvement)
+    db.commit()
+    db.refresh(improvement)
+    return improvement
+
+@pytest.fixture
+def test_confirmation(db, test_improvement, test_user):
+    from app.confirmation.models import Confirmation
+    
+    confirmation = Confirmation(
+        improvement_id=test_improvement.improvement_id,
+        confirmer_id=test_user.user_id,
+        status="接受",
+        comment="Test confirmation comment",
+        confirmation_date="2023-01-15",
+        created_at=datetime.utcnow()
+    )
+    db.add(confirmation)
+    db.commit()
+    db.refresh(confirmation)
+    return confirmation

@@ -3,22 +3,21 @@ from datetime import datetime
 from typing import Optional
 
 class PhotoBase(BaseModel):
-    defect_form_id: int
+    related_type: str  # '缺失單', '改善單', '確認單'
+    related_id: int
     description: Optional[str] = None
-    photo_type: str
     image_url: str
 
 class PhotoCreate(PhotoBase):
     pass
 
 class PhotoUpload(BaseModel):
-    defect_form_id: int
+    related_type: str = Field(description="Type of related form ('缺失單', '改善單', '確認單')")
+    related_id: int
     description: Optional[str] = None
-    photo_type: str = Field(description="Type of photo (e.g., 'before', 'after', 'progress')")
 
 class PhotoUpdate(BaseModel):
     description: Optional[str] = None
-    photo_type: Optional[str] = None
     image_url: Optional[str] = None
 
 class PhotoOut(PhotoBase):

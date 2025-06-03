@@ -42,7 +42,7 @@ def read_defects(
     submitted_id: Optional[int] = None,
     defect_category_id: Optional[int] = None,
     assigned_vendor_id: Optional[int] = None,
-    confirmation_status: Optional[str] = None,
+    status: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db)
@@ -56,7 +56,7 @@ def read_defects(
         submitted_id=submitted_id,
         defect_category_id=defect_category_id,
         assigned_vendor_id=assigned_vendor_id,
-        confirmation_status=confirmation_status
+        status=status
     )
     return defects
 

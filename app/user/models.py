@@ -18,4 +18,5 @@ class User(Base):
     # 註解掉與 Permission 的關聯，因為 Permission 模型中對應的關聯已被註解
     # permissions = relationship("Permission", back_populates="user")
     submitted_defects = relationship("Defect", foreign_keys="Defect.submitted_id", back_populates="submitter")
-    confirmed_defects = relationship("Defect", foreign_keys="Defect.confirmer_id", back_populates="confirmer")
+    submitted_improvements = relationship("Improvement", foreign_keys="Improvement.submitter_id", back_populates="submitter")
+    confirmations = relationship("Confirmation", foreign_keys="Confirmation.confirmer_id", back_populates="confirmer")

@@ -15,6 +15,8 @@ from app.defect_category.routers import router as defect_category_router
 from app.defect.routers import router as defect_router
 from app.defect_mark.routers import router as defect_mark_router
 from app.photo.routers import router as photo_router
+from app.improvement.routers import router as improvement_router
+from app.confirmation.routers import router as confirmation_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -44,6 +46,8 @@ app.include_router(defect_category_router, prefix="/defect-categories", tags=["D
 app.include_router(defect_router, prefix="/defects", tags=["Defects"])
 app.include_router(defect_mark_router, prefix="/defect-marks", tags=["Defect Marks"])
 app.include_router(photo_router, prefix="/photos", tags=["Photos"])
+app.include_router(improvement_router, prefix="/improvements", tags=["Improvements"])
+app.include_router(confirmation_router, prefix="/confirmations", tags=["Confirmations"])
 
 # Mount static files directory for photos and avatars
 # 使用專案根目錄的 static 資料夾

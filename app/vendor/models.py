@@ -14,4 +14,5 @@ class Vendor(Base):
     line_id = Column(String)
     
     # Relationships
-    defects = relationship("Defect", back_populates="vendor")
+    assigned_defects = relationship("Defect", foreign_keys="Defect.assigned_vendor_id", back_populates="assigned_vendor")
+    responsible_defects = relationship("Defect", foreign_keys="Defect.responsible_vendor_id", back_populates="responsible_vendor")

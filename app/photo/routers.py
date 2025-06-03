@@ -11,14 +11,26 @@ from app.database import get_db
 from app.photo import crud, schemas
 from app.utils import check_exists
 from app.defect.models import Defect
+from app.improvement.models import Improvement
+from app.confirmation.models import Confirmation
 
 router = APIRouter()
 
 @router.post("/", response_model=schemas.PhotoResponse, status_code=status.HTTP_201_CREATED)
 def create_photo(photo: schemas.PhotoCreate, request: Request, db: Session = Depends(get_db)):
     """Create a new photo (manual entry with URL)"""
-    # Check if defect exists
-    check_exists(db, Defect, photo.defect_form_id, "defect_id")
+    # Check if related item exists based on related_type
+    if photo.related_type == "缺失單":
+        check_exists(db, Defect, photo.related_id, "defect_id")
+    elif photo.related_type == "改善單":
+        check_exists(db, Improvement, photo.related_id, "improvement_id")
+    elif photo.related_type == "確認單":
+        check_exists(db, Confirmation, photo.related_id, "confirmation_id")
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid related_type: {photo.related_type}. Must be one of: '缺失單', '改善單', '確認單'"
+        )
     
     db_photo = crud.create_photo(db=db, photo=photo)
     
@@ -35,14 +47,24 @@ def create_photo(photo: schemas.PhotoCreate, request: Request, db: Session = Dep
 async def upload_photo(
     request: Request,
     file: UploadFile = File(...),
-    defect_form_id: int = Form(...),
+    related_type: str = Form(...),
+    related_id: int = Form(...),
     description: Optional[str] = Form(None),
-    photo_type: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """Upload a new photo file"""
-    # Check if defect exists
-    check_exists(db, Defect, defect_form_id, "defect_id")
+    # Check if related item exists based on related_type
+    if related_type == "缺失單":
+        check_exists(db, Defect, related_id, "defect_id")
+    elif related_type == "改善單":
+        check_exists(db, Improvement, related_id, "improvement_id")
+    elif related_type == "確認單":
+        check_exists(db, Confirmation, related_id, "confirmation_id")
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid related_type: {related_type}. Must be one of: '缺失單', '改善單', '確認單'"
+        )
     
     # Generate unique filename
     file_extension = os.path.splitext(file.filename)[1].lower()
@@ -72,9 +94,9 @@ async def upload_photo(
     
     # Create photo record in database
     photo_data = schemas.PhotoCreate(
-        defect_form_id=defect_form_id,
+        related_type=related_type,
+        related_id=related_id,
         description=description,
-        photo_type=photo_type,
         image_url=relative_url
     )
     
@@ -95,21 +117,31 @@ async def upload_photo(
 @router.get("/", response_model=List[schemas.PhotoResponse])
 def read_photos(
     request: Request,
-    defect_id: Optional[int] = None,
-    photo_type: Optional[str] = None,
+    related_type: Optional[str] = None,
+    related_id: Optional[int] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """Get a list of photos with pagination and optional filtering"""
-    if defect_id:
-        # Check if defect exists
-        check_exists(db, Defect, defect_id, "defect_id")
+    if related_type and related_id:
+        # Validate related_type
+        if related_type not in ["缺失單", "改善單", "確認單"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid related_type: {related_type}. Must be one of: '缺失單', '改善單', '確認單'"
+            )
         
-        if photo_type:
-            photos = crud.get_photos_by_type(db, defect_id=defect_id, photo_type=photo_type)
-        else:
-            photos = crud.get_photos_by_defect(db, defect_id=defect_id)
+        # Check if related item exists
+        if related_type == "缺失單":
+            check_exists(db, Defect, related_id, "defect_id")
+        elif related_type == "改善單":
+            check_exists(db, Improvement, related_id, "improvement_id")
+        elif related_type == "確認單":
+            check_exists(db, Confirmation, related_id, "confirmation_id")
+        
+        # Get photos for the related item
+        photos = crud.get_photos_by_related(db, related_type=related_type, related_id=related_id)
     else:
         photos = crud.get_photos(db, skip=skip, limit=limit)
     

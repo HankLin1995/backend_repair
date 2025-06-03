@@ -10,16 +10,16 @@ from app.photo import crud, schemas
 def test_create_photo(db, test_defect):
     """測試建立照片"""
     photo_data = schemas.PhotoCreate(
-        defect_form_id=test_defect.defect_id,
+        related_type="缺失單",
+        related_id=test_defect.defect_id,
         description="Test photo description",
-        photo_type="before",
         image_url="/static/photos/test.jpg"
     )
     
     photo = crud.create_photo(db=db, photo=photo_data)
-    assert photo.defect_form_id == test_defect.defect_id
+    assert photo.related_type == "缺失單"
+    assert photo.related_id == test_defect.defect_id
     assert photo.description == "Test photo description"
-    assert photo.photo_type == "before"
     assert photo.image_url == "/static/photos/test.jpg"
 
 def test_get_photo(db, test_photo):
@@ -27,9 +27,9 @@ def test_get_photo(db, test_photo):
     photo = crud.get_photo(db=db, photo_id=test_photo.photo_id)
     assert photo is not None
     assert photo.photo_id == test_photo.photo_id
-    assert photo.defect_form_id == test_photo.defect_form_id
+    assert photo.related_type == test_photo.related_type
+    assert photo.related_id == test_photo.related_id
     assert photo.description == test_photo.description
-    assert photo.photo_type == test_photo.photo_type
     assert photo.image_url == test_photo.image_url
 
 def test_get_photos(db, test_photo):
@@ -38,15 +38,9 @@ def test_get_photos(db, test_photo):
     assert len(photos) >= 1
     assert any(p.photo_id == test_photo.photo_id for p in photos)
 
-def test_get_photos_by_defect(db, test_photo, test_defect):
-    """測試依缺陷獲取照片"""
-    photos = crud.get_photos_by_defect(db=db, defect_id=test_defect.defect_id)
-    assert len(photos) >= 1
-    assert any(p.photo_id == test_photo.photo_id for p in photos)
-
-def test_get_photos_by_type(db, test_photo, test_defect):
-    """測試依照片類型獲取照片"""
-    photos = crud.get_photos_by_type(db=db, defect_id=test_defect.defect_id, photo_type="before")
+def test_get_photos_by_related(db, test_photo, test_defect):
+    """測試依關聯項目獲取照片"""
+    photos = crud.get_photos_by_related(db=db, related_type="缺失單", related_id=test_defect.defect_id)
     assert len(photos) >= 1
     assert any(p.photo_id == test_photo.photo_id for p in photos)
 
@@ -54,7 +48,6 @@ def test_update_photo(db, test_photo):
     """測試更新照片"""
     update_data = schemas.PhotoUpdate(
         description="Updated description",
-        photo_type="after",
         image_url="/static/photos/updated.jpg"
     )
     
@@ -62,7 +55,6 @@ def test_update_photo(db, test_photo):
     assert updated_photo is not None
     assert updated_photo.photo_id == test_photo.photo_id
     assert updated_photo.description == "Updated description"
-    assert updated_photo.photo_type == "after"
     assert updated_photo.image_url == "/static/photos/updated.jpg"
 
 def test_delete_photo(db, test_photo):
@@ -79,9 +71,9 @@ def test_delete_photo(db, test_photo):
 def test_api_create_photo(client, test_defect):
     """測試 API 建立照片"""
     photo_data = {
-        "defect_form_id": test_defect.defect_id,
+        "related_type": "缺失單",
+        "related_id": test_defect.defect_id,
         "description": "API test photo",
-        "photo_type": "before",
         "image_url": "/static/photos/api_test.jpg"
     }
     
@@ -89,9 +81,9 @@ def test_api_create_photo(client, test_defect):
     assert response.status_code == status.HTTP_201_CREATED
     
     data = response.json()
-    assert data["defect_form_id"] == test_defect.defect_id
+    assert data["related_type"] == "缺失單"
+    assert data["related_id"] == test_defect.defect_id
     assert data["description"] == "API test photo"
-    assert data["photo_type"] == "before"
     assert data["image_url"] == "/static/photos/api_test.jpg"
     assert "photo_id" in data
     assert "created_at" in data
@@ -112,19 +104,9 @@ def test_api_read_photos(client, test_photo):
         assert "full_url" in photo
         assert photo["full_url"].startswith("http")
 
-def test_api_read_photos_by_defect(client, test_photo, test_defect):
-    """測試 API 依缺陷獲取照片"""
-    response = client.get(f"/photos/?defect_id={test_defect.defect_id}")
-    assert response.status_code == status.HTTP_200_OK
-    
-    data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
-    assert any(p["photo_id"] == test_photo.photo_id for p in data)
-
-def test_api_read_photos_by_type(client, test_photo, test_defect):
-    """測試 API 依照片類型獲取照片"""
-    response = client.get(f"/photos/?defect_id={test_defect.defect_id}&photo_type=before")
+def test_api_read_photos_by_related(client, test_photo, test_defect):
+    """測試 API 依關聯項目獲取照片"""
+    response = client.get(f"/photos/?related_type=缺失單&related_id={test_defect.defect_id}")
     assert response.status_code == status.HTTP_200_OK
     
     data = response.json()
@@ -139,9 +121,9 @@ def test_api_read_photo(client, test_photo):
     
     data = response.json()
     assert data["photo_id"] == test_photo.photo_id
-    assert data["defect_form_id"] == test_photo.defect_form_id
+    assert data["related_type"] == test_photo.related_type
+    assert data["related_id"] == test_photo.related_id
     assert data["description"] == test_photo.description
-    assert data["photo_type"] == test_photo.photo_type
     assert data["image_url"] == test_photo.image_url
     assert "full_url" in data
     assert data["full_url"].startswith("http")
@@ -155,7 +137,6 @@ def test_api_update_photo(client, test_photo):
     """測試 API 更新照片"""
     update_data = {
         "description": "API updated description",
-        "photo_type": "after",
         "image_url": "/static/photos/api_updated.jpg"
     }
     
@@ -165,7 +146,6 @@ def test_api_update_photo(client, test_photo):
     data = response.json()
     assert data["photo_id"] == test_photo.photo_id
     assert data["description"] == "API updated description"
-    assert data["photo_type"] == "after"
     assert data["image_url"] == "/static/photos/api_updated.jpg"
     assert "full_url" in data
     assert data["full_url"].startswith("http")
@@ -174,7 +154,6 @@ def test_api_update_photo_not_found(client):
     """測試 API 更新不存在的照片"""
     update_data = {
         "description": "Updated description",
-        "photo_type": "after",
         "image_url": "/static/photos/updated.jpg"
     }
     
@@ -210,9 +189,9 @@ def test_api_upload_photo(client, test_defect):
     # 準備表單資料
     files = {"file": ("test.jpg", test_image, "image/jpeg")}
     data = {
-        "defect_form_id": str(test_defect.defect_id),
-        "description": "Uploaded test photo",
-        "photo_type": "before"
+        "related_type": "缺失單",
+        "related_id": str(test_defect.defect_id),
+        "description": "Uploaded test photo"
     }
     
     # 發送請求
@@ -221,9 +200,9 @@ def test_api_upload_photo(client, test_defect):
     
     # 驗證回應
     data = response.json()
-    assert data["defect_form_id"] == test_defect.defect_id
+    assert data["related_type"] == "缺失單"
+    assert data["related_id"] == test_defect.defect_id
     assert data["description"] == "Uploaded test photo"
-    assert data["photo_type"] == "before"
     assert "image_url" in data
     assert data["image_url"].startswith("/static/photos/")
     assert "photo_id" in data
