@@ -49,13 +49,28 @@ Table 缺失單 {
   缺失說明 text // defect_description
   指派廠商ID integer [ref: > 廠商.廠商ID] // assigned_vendor_id
   修繕說明 text // repair_description
-  預期完成日期 datetime // expected_completion_date
-  修繕完成時間 datetime // repair_completed_at
-  確認狀態 varchar // confirmation_status
-  確認時間 datetime // confirmation_time
-  確認者ID integer [ref: > 使用者.使用者ID] // confirmer_id
+  修繕天數 integer // expected_completion_day
+  責任廠商ID integer [ref: > 廠商.廠商ID] // responsible_vendor_id
+  前置缺失單ID integer [ref: > 缺失單.缺失單ID] // previous_defect_id
+  建立時間 datetime // created_at 等待中、改善中、待確認、已完成、退件
+  狀態 varchar // status
+}
+
+Table 改善單 {
+  改善單ID integer [pk] // improvement_id
+  缺失單ID integer [ref: > 缺失單.缺失單ID] // defect_id
+  改善者ID integer [ref: > 使用者.使用者ID] // submitter_id
+  改善說明 text // improvement_description
   建立時間 datetime // created_at
-  更新時間 datetime // updated_at
+}
+
+Table 確認單{
+  確認單ID integer [pk] // confirmation_id
+  改善單ID integer [ref: > 改善單.改善單ID] // improvement_id
+  確認者ID integer [ref: > 使用者.使用者ID] // confirmer_id
+  確認時間 datetime // confirmation_time
+  審查理由 text // review_reason
+  狀態 varchar // status 通過、退回、未確認
 }
 
 Table 缺失標記 {
@@ -69,9 +84,9 @@ Table 缺失標記 {
 
 Table 照片 {
   照片ID integer [pk] // photo_id
-  缺失單ID integer [ref: > 缺失單.缺失單ID] // defect_form_id
+  關聯類型 varchar // related_type -- '缺失單', '改善單', '確認單'
+  關聯ID integer // related_id
   描述 text // description
-  類型 varchar // photo_type
   圖片連結 varchar // image_url
   建立時間 datetime // created_at
 }
