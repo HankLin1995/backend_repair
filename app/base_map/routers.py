@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import shutil
+import os
+from pathlib import Path
 
 from app.database import get_db
 from app.base_map import crud, schemas
 from app.utils import check_exists
 from app.project.models import Project
+from app.base_map.models import BaseMap
+
 
 router = APIRouter()
 
@@ -65,3 +70,28 @@ def delete_base_map(base_map_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Base map not found")
     return None
+
+@router.post("/{base_map_id}/image", response_model=schemas.BaseMapOut)
+def upload_project_image(base_map_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Upload a project image"""
+    db_base_map = crud.get_base_map(db, base_map_id=base_map_id)
+    if db_base_map is None:
+        raise HTTPException(status_code=404, detail="Base map not found")
+
+    # 確保目錄存在
+    image_dir = Path("static/base_map")
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    # 建立檔案名稱 (使用 project_id)
+    file_extension = os.path.splitext(file.filename)[1] if file.filename else ".png"
+    image_filename = f"base_map_{base_map_id}{file_extension}"
+    image_path = f"static/base_map/{image_filename}"
+
+    # 儲存檔案
+    with open(image_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # 更新專案的圖片路徑
+    update_data = schemas.BaseMapUpdate(file_path=image_path)
+    updated_base_map = crud.update_base_map(db, base_map_id=base_map_id, base_map=update_data)
+    return updated_base_map
