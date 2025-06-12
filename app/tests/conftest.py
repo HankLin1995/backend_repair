@@ -119,10 +119,11 @@ def test_base_map(db, test_project):
     return base_map
 
 @pytest.fixture
-def test_vendor(db):
+def test_vendor(db, test_project):
     from app.vendor.models import Vendor
     
     vendor = Vendor(
+        project_id=test_project.project_id,
         vendor_name="Test Vendor",
         contact_person="Contact Person",
         phone="123-456-7890",
@@ -134,10 +135,11 @@ def test_vendor(db):
     return vendor
 
 @pytest.fixture
-def test_defect_category(db):
+def test_defect_category(db, test_project):
     from app.defect_category.models import DefectCategory
     
     category = DefectCategory(
+        project_id=test_project.project_id,
         category_name="Test Category",
         description="Test description"
     )

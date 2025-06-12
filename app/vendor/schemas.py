@@ -3,6 +3,7 @@ from typing import Optional, List
 
 class VendorBase(BaseModel):
     vendor_name: str
+    project_id: int
     contact_person: Optional[str] = None
     phone: Optional[str] = None
     responsibilities: Optional[str] = None
@@ -14,6 +15,7 @@ class VendorCreate(VendorBase):
 
 class VendorUpdate(BaseModel):
     vendor_name: Optional[str] = None
+    project_id: Optional[int] = None
     contact_person: Optional[str] = None
     phone: Optional[str] = None
     responsibilities: Optional[str] = None

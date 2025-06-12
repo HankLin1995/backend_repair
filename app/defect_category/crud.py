@@ -18,6 +18,7 @@ def create_defect_category(db: Session, defect_category: DefectCategoryCreate) -
     """Create a new defect category"""
     db_defect_category = DefectCategory(
         category_name=defect_category.category_name,
+        project_id=defect_category.project_id,
         description=defect_category.description
     )
     db.add(db_defect_category)
@@ -62,6 +63,7 @@ def get_defect_categories_with_counts(db: Session) -> List[Dict[str, Any]]:
         
         result.append({
             "defect_category_id": category.defect_category_id,
+            "project_id": category.project_id,
             "category_name": category.category_name,
             "description": category.description,
             "defect_count": defect_count

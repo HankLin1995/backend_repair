@@ -4,10 +4,11 @@ from app.defect_category import crud
 from app.defect_category.schemas import DefectCategoryCreate, DefectCategoryUpdate
 
 # CRUD Tests
-def test_create_defect_category(db):
+def test_create_defect_category(db, test_project):
     # Create test data
     category_data = DefectCategoryCreate(
         category_name="Test Category",
+        project_id=test_project.project_id,
         description="Test description"
     )
     
@@ -26,13 +27,15 @@ def test_get_defect_category(db, test_defect_category):
     # Check defect category was retrieved correctly
     assert category is not None
     assert category.defect_category_id == test_defect_category.defect_category_id
+    assert category.project_id == test_defect_category.project_id
     assert category.category_name == test_defect_category.category_name
     assert category.description == test_defect_category.description
 
-def test_get_defect_categories(db, test_defect_category):
+def test_get_defect_categories(db, test_defect_category, test_project):
     # Create another defect category
     category_data = DefectCategoryCreate(
         category_name="Another Test Category",
+        project_id=test_project.project_id,
         description="Another test description"
     )
     crud.create_defect_category(db, category_data)
@@ -86,10 +89,11 @@ def test_get_defect_categories_with_counts(db, test_defect_category, test_defect
     assert category_data["defect_count"] >= 1
 
 # API Tests
-def test_api_create_defect_category(client):
+def test_api_create_defect_category(client, test_project):
     # Create test data
     category_data = {
         "category_name": "API Test Category",
+        "project_id": test_project.project_id,
         "description": "API test description"
     }
     
@@ -150,6 +154,7 @@ def test_api_update_defect_category(client, test_defect_category):
     # Create update data
     category_data = {
         "category_name": "Updated API Test Category",
+        "project_id": test_defect_category.project_id,
         "description": "Updated API test description"
     }
     

@@ -4,10 +4,11 @@ from app.vendor import crud
 from app.vendor.schemas import VendorCreate, VendorUpdate
 
 # CRUD Tests
-def test_create_vendor(db):
+def test_create_vendor(db, test_project):
     # Create test data
     vendor_data = VendorCreate(
         vendor_name="Test Vendor",
+        project_id=test_project.project_id,
         contact_person="Test Contact",
         phone="123-456-7890",
         responsibilities="Test responsibilities",
@@ -34,6 +35,7 @@ def test_get_vendor(db, test_vendor):
     # Check vendor was retrieved correctly
     assert vendor is not None
     assert vendor.vendor_id == test_vendor.vendor_id
+    assert vendor.project_id == test_vendor.project_id
     assert vendor.vendor_name == test_vendor.vendor_name
     assert vendor.contact_person == test_vendor.contact_person
     assert vendor.phone == test_vendor.phone
@@ -58,9 +60,10 @@ def test_update_vendor(db, test_vendor):
     assert updated_vendor.email == "updated_vendor@example.com"
     assert updated_vendor.line_id == "updated_lineid_vendor"
 
-def test_api_create_vendor(client):
+def test_api_create_vendor(client, test_project):
     vendor_data = {
         "vendor_name": "API Vendor",
+        "project_id": test_project.project_id,
         "contact_person": "API Contact",
         "phone": "000-111-2222",
         "responsibilities": "API responsibilities",
@@ -98,10 +101,11 @@ def test_api_get_vendor(client, test_vendor):
     assert "email" in data
     assert "line_id" in data
 
-def test_get_vendors(db, test_vendor):
+def test_get_vendors(db, test_vendor, test_project):
     # Create another vendor
     vendor_data = VendorCreate(
         vendor_name="Another Test Vendor",
+        project_id=test_project.project_id,
         contact_person="Another Contact",
         phone="987-654-3210",
         responsibilities="Another responsibilities"
@@ -162,10 +166,11 @@ def test_get_vendors_with_defect_counts(db, test_vendor, test_defect):
     assert vendor_data["defect_count"] >= 1
 
 # API Tests
-def test_api_create_vendor(client):
+def test_api_create_vendor(client, test_project):
     # Create test data
     vendor_data = {
         "vendor_name": "API Test Vendor",
+        "project_id": test_project.project_id,
         "contact_person": "API Contact",
         "phone": "111-222-3333",
         "responsibilities": "API responsibilities"

@@ -18,6 +18,7 @@ def create_vendor(db: Session, vendor: VendorCreate) -> Vendor:
     """Create a new vendor"""
     db_vendor = Vendor(
         vendor_name=vendor.vendor_name,
+        project_id=vendor.project_id,
         contact_person=vendor.contact_person,
         phone=vendor.phone,
         responsibilities=vendor.responsibilities,
@@ -66,6 +67,7 @@ def get_vendors_with_defect_counts(db: Session) -> List[Dict[str, Any]]:
         
         result.append({
             "vendor_id": vendor.vendor_id,
+            "project_id": vendor.project_id,
             "vendor_name": vendor.vendor_name,
             "contact_person": vendor.contact_person,
             "phone": vendor.phone,

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from typing import List, Optional, Dict, Any
+import os
 
 from app.base_map.models import BaseMap
 from app.base_map.schemas import BaseMapCreate, BaseMapUpdate
@@ -49,6 +50,13 @@ def delete_base_map(db: Session, base_map_id: int) -> bool:
     db_base_map = get_base_map(db, base_map_id)
     if not db_base_map:
         return False
+
+    # 刪除圖片檔案（若不是 default.png）
+    if db_base_map.file_path and os.path.exists(db_base_map.file_path):
+        try:
+            os.remove(db_base_map.file_path)
+        except Exception:
+            pass
     
     db.delete(db_base_map)
     db.commit()
