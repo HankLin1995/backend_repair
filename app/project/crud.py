@@ -43,16 +43,30 @@ def update_project(db: Session, project_id: int, project: ProjectUpdate) -> Opti
 import os
 
 def delete_project(db: Session, project_id: int) -> bool:
-    """Delete a project (and its image file if exists)"""
+    """Delete a project (and its image file if only used by this project)"""
     db_project = get_project(db, project_id)
     if not db_project:
         return False
-    # 刪除圖片檔案（若不是 default.png）
-    if db_project.image_path and db_project.image_path != "static/project/default.png" and os.path.exists(db_project.image_path):
-        try:
-            os.remove(db_project.image_path)
-        except Exception:
-            pass
+
+    image_path = db_project.image_path
+    # 只考慮刪除 project_id 專屬的圖片
+    if (
+        image_path
+        and image_path != "static/project/default.png"
+        and f"project_{project_id}" in os.path.basename(image_path)
+        and os.path.exists(image_path)
+    ):
+        # 檢查資料庫是否還有其他專案引用這個檔案
+        from app.project.models import Project
+        other = db.query(Project).filter(
+            Project.image_path == image_path, Project.project_id != project_id
+        ).first()
+        if not other:
+            try:
+                os.remove(image_path)
+            except Exception:
+                pass
+
     db.delete(db_project)
     db.commit()
     return True

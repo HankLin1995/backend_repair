@@ -15,5 +15,5 @@ class Project(Base):
     permissions = relationship("Permission", back_populates="project")
     base_maps = relationship("BaseMap", back_populates="project")
     defects = relationship("Defect", back_populates="project")
-    vendors = relationship("Vendor", back_populates="project")
-    defect_categories = relationship("DefectCategory", back_populates="project")
+    vendors = relationship("Vendor", back_populates="project", cascade="all, delete-orphan")
+    defect_categories = relationship("DefectCategory", back_populates="project", cascade="all, delete-orphan")

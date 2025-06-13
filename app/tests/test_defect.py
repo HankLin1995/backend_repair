@@ -1,6 +1,6 @@
 import pytest
 from fastapi import status
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from app.defect import crud
 from app.defect.schemas import DefectCreate, DefectUpdate
 
@@ -13,7 +13,7 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
-        expected_completion_day=7,
+        expected_completion_day=date.today() + timedelta(days=7),
         status="等待中"
     )
     
@@ -93,7 +93,7 @@ def test_get_defects_with_filters(db, test_defect, test_project, test_user, test
 def test_update_defect(db, test_defect):
     # Create update data
     repair_description = "Test repair description"
-    expected_completion_day = 10
+    expected_completion_day = date.today() + timedelta(days=10)
     status = "已完成"
     confirmer_id = 1
     
@@ -201,13 +201,16 @@ def test_get_defect_stats(db, test_defect, test_project):
 # API Tests
 def test_api_create_defect(client, test_project, test_user, test_defect_category, test_vendor):
     # Create test data
+    # 使用今天日期加上7天作為預期完成日期
+    expected_date = (date.today() + timedelta(days=7)).isoformat()
+    
     defect_data = {
         "project_id": test_project.project_id,
         "submitted_id": test_user.user_id,
         "defect_category_id": test_defect_category.defect_category_id,
         "defect_description": "API Test defect description",
         "assigned_vendor_id": test_vendor.vendor_id,
-        "expected_completion_day": 7,
+        "expected_completion_day": expected_date,
         "status": "等待中"
     }
     
@@ -373,11 +376,12 @@ def test_api_read_defect_not_found(client):
 
 def test_api_update_defect(client, test_defect):
     # Create update data
+    expected_date = (date.today() + timedelta(days=10)).isoformat()
     defect_data = {
         "repair_description": "API Test repair description",
-        "expected_completion_day": 10,
-        "status": "已完成",
-        "confirmer_id": 1
+        "expected_completion_day": expected_date,
+        "status": "已完成"
+        # "confirmer_id" 欄位已經被移除
     }
     
     # Send request
@@ -485,12 +489,13 @@ def test_defect_multi_filter(db, test_defect, test_project, test_vendor):
 
 # 新增測試案例：時間相關測試
 def test_defect_expected_completion(db, test_defect):
-    # 設定預期完成天數
-    update_data = DefectUpdate(expected_completion_day=5)
+    # 設定預期完成日期
+    expected_date = date.today() + timedelta(days=5)
+    update_data = DefectUpdate(expected_completion_day=expected_date)
     updated_defect = crud.update_defect(db, test_defect.defect_id, update_data)
     
     # 檢查是否正確設定
-    assert updated_defect.expected_completion_day == 5
+    assert updated_defect.expected_completion_day == expected_date
 
 
 # 新增測試案例：API 使用者操作測試

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
@@ -13,11 +13,12 @@ class Defect(Base):
     defect_description = Column(Text)
     assigned_vendor_id = Column(Integer, ForeignKey("vendors.vendor_id", ondelete="SET NULL"))
     repair_description = Column(Text)
-    expected_completion_day = Column(Integer)  # 修繕天數
+    expected_completion_day = Column(Date)  # 預計完成日期
     responsible_vendor_id = Column(Integer, ForeignKey("vendors.vendor_id", ondelete="SET NULL"))  # 責任廠商ID
     previous_defect_id = Column(Integer, ForeignKey("defects.defect_id", ondelete="SET NULL"))  # 前置缺失單ID
     created_at = Column(DateTime, default=datetime.utcnow)
     status = Column(String)  # 等待中、改善中、待確認、已完成、退件
+    confirmer_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"))
     
     # Relationships
     project = relationship("Project", back_populates="defects")

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 import os
 import sys
 from datetime import datetime
+from datetime import timedelta
 
 # Add the parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -158,7 +159,7 @@ def test_defect(db, test_project, test_user, test_defect_category, test_vendor):
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
-        expected_completion_day=7,
+        expected_completion_day=datetime.now() + timedelta(days=7),
         status="等待中",
         created_at=datetime.utcnow()
     )

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Dict, Any, Union
 from app.improvement.schemas import ImprovementOut
 from app.vendor.schemas import VendorOut
@@ -14,7 +14,7 @@ class DefectBase(BaseModel):
     defect_description: str
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
-    expected_completion_day: Optional[int] = None
+    expected_completion_day: Optional[date] = None
     # responsible_vendor_id: Optional[int] = None
     previous_defect_id: Optional[int] = None
     status: Optional[str] = None  # 等待中、改善中、待確認、已完成、退件
@@ -28,14 +28,14 @@ class DefectUpdate(BaseModel):
     defect_description: Optional[str] = None
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
-    expected_completion_day: Optional[int] = None
+    expected_completion_day: Optional[date] = None
     responsible_vendor_id: Optional[int] = None
     status: Optional[str] = None
-    # confirmer_id: Optional[int] = None
+    confirmer_id: Optional[int] = None
 
 class DefectOut(DefectBase):
     defect_id: int
-    # confirmer_id: Optional[int] = None
+    confirmer_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
