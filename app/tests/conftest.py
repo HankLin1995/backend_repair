@@ -188,7 +188,7 @@ def test_photo(db, test_defect):
     from app.photo.models import Photo
     
     photo = Photo(
-        related_type="缺失單",
+        related_type="defect",
         related_id=test_defect.defect_id,
         description="Test photo description",
         image_url="/path/to/image.jpg",

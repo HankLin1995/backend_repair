@@ -86,10 +86,12 @@ def update_project(
         raise HTTPException(status_code=404, detail="Project not found")
     return db_project
 
+from app.project import services
+
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(project_id: int, db: Session = Depends(get_db)):
-    """Delete a project"""
-    success = crud.delete_project(db, project_id=project_id)
+    """Delete a project (and related base_map files)"""
+    success = services.delete_project_with_files(db, project_id=project_id)
     if not success:
         raise HTTPException(status_code=404, detail="Project not found")
     return None

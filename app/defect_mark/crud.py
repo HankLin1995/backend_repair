@@ -16,7 +16,7 @@ def get_defect_marks(db: Session, skip: int = 0, limit: int = 100) -> List[Defec
 
 def get_defect_marks_by_defect(db: Session, defect_id: int) -> List[DefectMark]:
     """Get all defect marks for a specific defect"""
-    return db.query(DefectMark).filter(DefectMark.defect_form_id == defect_id).all()
+    return db.query(DefectMark).filter(DefectMark.defect_mark_id == defect_id).all()
 
 def get_defect_marks_by_base_map(db: Session, base_map_id: int) -> List[DefectMark]:
     """Get all defect marks for a specific base map"""
@@ -24,13 +24,9 @@ def get_defect_marks_by_base_map(db: Session, base_map_id: int) -> List[DefectMa
 
 def create_defect_mark(db: Session, defect_mark: DefectMarkCreate) -> DefectMark:
     """Create a new defect mark"""
-    db_defect_mark = DefectMark(
-        defect_form_id=defect_mark.defect_form_id,
-        base_map_id=defect_mark.base_map_id,
-        coordinate_x=defect_mark.coordinate_x,
-        coordinate_y=defect_mark.coordinate_y,
-        scale=defect_mark.scale
-    )
+
+    db_defect_mark = DefectMark(**defect_mark.model_dump())
+
     db.add(db_defect_mark)
     db.commit()
     db.refresh(db_defect_mark)
@@ -68,18 +64,20 @@ def get_defect_marks_with_details(db: Session, base_map_id: Optional[int] = None
             Defect.defect_description,
             BaseMap.map_name
         )
-        .join(Defect, DefectMark.defect_form_id == Defect.defect_id)
+        .join(Defect, DefectMark.defect_mark_id == Defect.defect_id)
         .join(BaseMap, DefectMark.base_map_id == BaseMap.base_map_id)
     )
     
     if base_map_id:
+
         query = query.filter(DefectMark.base_map_id == base_map_id)
     
     results = []
     for defect_mark, defect_description, map_name in query:
+
         results.append({
             "defect_mark_id": defect_mark.defect_mark_id,
-            "defect_form_id": defect_mark.defect_form_id,
+            "defect_mark_id": defect_mark.defect_mark_id,
             "base_map_id": defect_mark.base_map_id,
             "coordinate_x": defect_mark.coordinate_x,
             "coordinate_y": defect_mark.coordinate_y,

@@ -1,7 +1,11 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List, Union
+from typing import Optional, List, Dict, Any, Union
 from app.improvement.schemas import ImprovementOut
+from app.vendor.schemas import VendorOut
+from app.defect_category.schemas import DefectCategoryOut
+from app.user.schemas import UserOut
+from app.project.schemas import ProjectOut
 
 class DefectBase(BaseModel):
     project_id: int
@@ -11,12 +15,13 @@ class DefectBase(BaseModel):
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
     expected_completion_day: Optional[int] = None
-    responsible_vendor_id: Optional[int] = None
+    # responsible_vendor_id: Optional[int] = None
     previous_defect_id: Optional[int] = None
     status: Optional[str] = None  # 等待中、改善中、待確認、已完成、退件
 
 class DefectCreate(DefectBase):
-    confirmer_id: Optional[int] = None
+    pass
+    # confirmer_id: Optional[int] = None
 
 class DefectUpdate(BaseModel):
     defect_category_id: Optional[int] = None
@@ -26,11 +31,11 @@ class DefectUpdate(BaseModel):
     expected_completion_day: Optional[int] = None
     responsible_vendor_id: Optional[int] = None
     status: Optional[str] = None
-    confirmer_id: Optional[int] = None
+    # confirmer_id: Optional[int] = None
 
 class DefectOut(DefectBase):
     defect_id: int
-    confirmer_id: Optional[int] = None
+    # confirmer_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
@@ -72,6 +77,17 @@ class PhotoBase(BaseModel):
 class PhotoOut(PhotoBase):
     photo_id: int
     created_at: datetime
+    
+    model_config = {"from_attributes": True}
+
+class DefectFullDetailOut(DefectWithMarksAndPhotosOut):
+    """完整的缺失詳細資訊，包含所有相關實體的完整資料"""
+    defect_category: Optional[Dict[str, Any]] = None
+    assigned_vendor: Optional[Dict[str, Any]] = None
+    responsible_vendor: Optional[Dict[str, Any]] = None
+    submitter: Optional[Dict[str, Any]] = None
+    # confirmer: Optional[Dict[str, Any]] = None
+    project: Optional[Dict[str, Any]] = None
     
     model_config = {"from_attributes": True}
 

@@ -16,34 +16,34 @@ from app.confirmation.models import Confirmation
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.PhotoResponse, status_code=status.HTTP_201_CREATED)
-def create_photo(photo: schemas.PhotoCreate, request: Request, db: Session = Depends(get_db)):
-    """Create a new photo (manual entry with URL)"""
-    # Check if related item exists based on related_type
-    if photo.related_type == "缺失單":
-        check_exists(db, Defect, photo.related_id, "defect_id")
-    elif photo.related_type == "改善單":
-        check_exists(db, Improvement, photo.related_id, "improvement_id")
-    elif photo.related_type == "確認單":
-        check_exists(db, Confirmation, photo.related_id, "confirmation_id")
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid related_type: {photo.related_type}. Must be one of: '缺失單', '改善單', '確認單'"
-        )
+# @router.post("/", response_model=schemas.PhotoResponse, status_code=status.HTTP_201_CREATED)
+# def create_photo(photo: schemas.PhotoCreate, request: Request, db: Session = Depends(get_db)):
+#     """Create a new photo (manual entry with URL)"""
+#     # Check if related item exists based on related_type
+#     if photo.related_type == "defect":
+#         check_exists(db, Defect, photo.related_id, "defect_id")
+#     elif photo.related_type == "improvement":
+#         check_exists(db, Improvement, photo.related_id, "improvement_id")
+#     elif photo.related_type == "confirmation":
+#         check_exists(db, Confirmation, photo.related_id, "confirmation_id")
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=f"Invalid related_type: {photo.related_type}. Must be one of: 'defect', 'improvement', 'confirmation'"
+#         )
     
-    db_photo = crud.create_photo(db=db, photo=photo)
+#     db_photo = crud.create_photo(db=db, photo=photo)
     
-    # Add full URL to the photo
-    base_url = str(request.base_url).rstrip('/')
-    full_url = f"{base_url}{db_photo.image_url}"
+#     # Add full URL to the photo
+#     base_url = str(request.base_url).rstrip('/')
+#     full_url = f"{base_url}{db_photo.image_url}"
     
-    return schemas.PhotoResponse(
-        **db_photo.__dict__,
-        full_url=full_url
-    )
+#     return schemas.PhotoResponse(
+#         **db_photo.__dict__,
+#         full_url=full_url
+#     )
 
-@router.post("/upload/", response_model=schemas.PhotoResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.PhotoResponse, status_code=status.HTTP_201_CREATED)
 async def upload_photo(
     request: Request,
     file: UploadFile = File(...),
@@ -54,16 +54,16 @@ async def upload_photo(
 ):
     """Upload a new photo file"""
     # Check if related item exists based on related_type
-    if related_type == "缺失單":
+    if related_type == "defect":
         check_exists(db, Defect, related_id, "defect_id")
-    elif related_type == "改善單":
+    elif related_type == "improvement":
         check_exists(db, Improvement, related_id, "improvement_id")
-    elif related_type == "確認單":
+    elif related_type == "confirmation":
         check_exists(db, Confirmation, related_id, "confirmation_id")
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid related_type: {related_type}. Must be one of: '缺失單', '改善單', '確認單'"
+            detail=f"Invalid related_type: {related_type}. Must be one of: 'defect', 'improvement', 'confirmation'"
         )
     
     # Generate unique filename
@@ -76,13 +76,16 @@ async def upload_photo(
             detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
         )
     
-    # Create unique filename with timestamp and UUID
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    unique_filename = f"{timestamp}_{uuid.uuid4().hex}{file_extension}"
-    
-    # Ensure directory exists
-    photos_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "photos")
+    # Create organized directory structure based on related_type
+    # 使用專案根目錄，確保在 Docker 容器中也能正確掛載
+    project_root = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".."))
+    photos_dir = os.path.join(project_root, "static", "photos", related_type)
     os.makedirs(photos_dir, exist_ok=True)
+    
+    # Create unique filename with related_type, related_id, timestamp and short UUID
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    short_uuid = uuid.uuid4().hex[:8]  # 使用較短的 UUID 保持檔名簡潔
+    unique_filename = f"{related_type}_{related_id}_{timestamp}_{short_uuid}{file_extension}"
     
     # Save file to disk
     file_path = os.path.join(photos_dir, unique_filename)
@@ -90,7 +93,7 @@ async def upload_photo(
         shutil.copyfileobj(file.file, buffer)
     
     # Create relative URL path for database
-    relative_url = f"/static/photos/{unique_filename}"
+    relative_url = f"/static/photos/{related_type}/{unique_filename}"
     
     # Create photo record in database
     photo_data = schemas.PhotoCreate(
@@ -126,18 +129,18 @@ def read_photos(
     """Get a list of photos with pagination and optional filtering"""
     if related_type and related_id:
         # Validate related_type
-        if related_type not in ["缺失單", "改善單", "確認單"]:
+        if related_type not in ["defect", "improvement", "confirmation"]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid related_type: {related_type}. Must be one of: '缺失單', '改善單', '確認單'"
+                detail=f"Invalid related_type: {related_type}. Must be one of: 'defect', 'improvement', 'confirmation'"
             )
         
         # Check if related item exists
-        if related_type == "缺失單":
+        if related_type == "defect":
             check_exists(db, Defect, related_id, "defect_id")
-        elif related_type == "改善單":
+        elif related_type == "improvement":
             check_exists(db, Improvement, related_id, "improvement_id")
-        elif related_type == "確認單":
+        elif related_type == "confirmation":
             check_exists(db, Confirmation, related_id, "confirmation_id")
         
         # Get photos for the related item

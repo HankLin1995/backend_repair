@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 class PhotoBase(BaseModel):
-    related_type: str  # '缺失單', '改善單', '確認單'
+    related_type: str  # 'defect', 'improvement', 'confirmation'
     related_id: int
     description: Optional[str] = None
     image_url: str
@@ -12,7 +12,7 @@ class PhotoCreate(PhotoBase):
     pass
 
 class PhotoUpload(BaseModel):
-    related_type: str = Field(description="Type of related form ('缺失單', '改善單', '確認單')")
+    related_type: str = Field(description="Type of related form ('defect', 'improvement', 'confirmation')")
     related_id: int
     description: Optional[str] = None
 

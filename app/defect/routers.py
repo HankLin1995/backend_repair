@@ -31,12 +31,12 @@ def create_defect(defect: schemas.DefectCreate, db: Session = Depends(get_db)):
         check_exists(db, Vendor, defect.assigned_vendor_id, "vendor_id")
     
     # Check if confirmer exists if provided
-    if defect.confirmer_id:
-        check_exists(db, User, defect.confirmer_id, "user_id")
+    # if defect.confirmer_id:
+    #     check_exists(db, User, defect.confirmer_id, "user_id")
     
     return crud.create_defect(db=db, defect=defect)
 
-@router.get("/", response_model=List[schemas.DefectOut])
+@router.get("/", response_model=List[schemas.DefectDetailOut])
 def read_defects(
     project_id: Optional[int] = None,
     submitted_id: Optional[int] = None,
@@ -48,7 +48,7 @@ def read_defects(
     db: Session = Depends(get_db)
 ):
     """Get a list of defects with pagination and optional filtering"""
-    defects = crud.get_defects(
+    defects = crud.get_defects_with_details(
         db, 
         skip=skip, 
         limit=limit,
@@ -80,10 +80,10 @@ def read_defect(defect_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Defect not found")
     return defect_data
 
-@router.get("/{defect_id}/full", response_model=schemas.DefectWithMarksAndPhotosOut)
+@router.get("/{defect_id}/full", response_model=schemas.DefectFullDetailOut)
 def read_defect_full(defect_id: int, db: Session = Depends(get_db)):
-    """Get a specific defect by ID with all related data"""
-    defect_data = crud.get_defect_with_marks_and_photos(db, defect_id=defect_id)
+    """Get a specific defect by ID with all related data including complete entity details"""
+    defect_data = crud.get_defect_with_full_details(db, defect_id=defect_id)
     if defect_data is None:
         raise HTTPException(status_code=404, detail="Defect not found")
     return defect_data
@@ -105,8 +105,8 @@ def update_defect(
         check_exists(db, Vendor, defect.assigned_vendor_id, "vendor_id")
     
     # Check if confirmer exists if provided
-    if defect.confirmer_id:
-        check_exists(db, User, defect.confirmer_id, "user_id")
+    # if defect.confirmer_id:
+    #     check_exists(db, User, defect.confirmer_id, "user_id")
     
     db_defect = crud.update_defect(db, defect_id=defect_id, defect=defect)
     if db_defect is None:

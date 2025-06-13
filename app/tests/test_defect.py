@@ -236,7 +236,24 @@ def test_api_read_defects(client, test_defect):
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 1
-    assert any(d["defect_id"] == test_defect.defect_id for d in data)
+    
+    # 找到測試缺失單的資料
+    test_defect_data = next((d for d in data if d["defect_id"] == test_defect.defect_id), None)
+    assert test_defect_data is not None
+    
+    # 檢查新增的欄位
+    assert "project_name" in test_defect_data
+    assert "submitter_name" in test_defect_data
+    
+    # 檢查分類名稱和廠商名稱（如果有的話）
+    if test_defect.defect_category_id:
+        assert "category_name" in test_defect_data
+    
+    if test_defect.assigned_vendor_id:
+        assert "assigned_vendor_name" in test_defect_data
+    
+    if test_defect.responsible_vendor_id:
+        assert "responsible_vendor_name" in test_defect_data
 
 def test_api_read_defects_with_filters(client, test_defect, test_project, test_user, test_defect_category, test_vendor):
     # Test filtering by project
@@ -245,6 +262,8 @@ def test_api_read_defects_with_filters(client, test_defect, test_project, test_u
     data = response.json()
     assert len(data) >= 1
     assert all(d["project_id"] == test_project.project_id for d in data)
+    # 檢查專案名稱
+    assert all(d["project_name"] == test_project.project_name for d in data)
     
     # Test filtering by submitter
     response = client.get(f"/defects/?submitted_id={test_user.user_id}")
@@ -252,6 +271,8 @@ def test_api_read_defects_with_filters(client, test_defect, test_project, test_u
     data = response.json()
     assert len(data) >= 1
     assert all(d["submitted_id"] == test_user.user_id for d in data)
+    # 檢查提交者名稱
+    assert all(d["submitter_name"] == test_user.name for d in data)
     
     # Test filtering by category
     if test_defect.defect_category_id:
@@ -260,6 +281,8 @@ def test_api_read_defects_with_filters(client, test_defect, test_project, test_u
         data = response.json()
         assert len(data) >= 1
         assert all(d["defect_category_id"] == test_defect.defect_category_id for d in data)
+        # 檢查分類名稱
+        assert all(d["category_name"] == test_defect_category.category_name for d in data)
     
     # Test filtering by vendor
     if test_defect.assigned_vendor_id:
@@ -268,6 +291,8 @@ def test_api_read_defects_with_filters(client, test_defect, test_project, test_u
         data = response.json()
         assert len(data) >= 1
         assert all(d["assigned_vendor_id"] == test_defect.assigned_vendor_id for d in data)
+        # 檢查廠商名稱
+        assert all(d["assigned_vendor_name"] == test_vendor.vendor_name for d in data)
     
     # Test filtering by status
     response = client.get(f"/defects/?status={test_defect.status}")

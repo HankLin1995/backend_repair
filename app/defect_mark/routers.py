@@ -14,7 +14,7 @@ router = APIRouter()
 def create_defect_mark(defect_mark: schemas.DefectMarkCreate, db: Session = Depends(get_db)):
     """Create a new defect mark"""
     # Check if defect exists
-    check_exists(db, Defect, defect_mark.defect_form_id, "defect_id")
+    check_exists(db, Defect, defect_mark.defect_id, "defect_id")
     
     # Check if base map exists
     check_exists(db, BaseMap, defect_mark.base_map_id, "base_map_id")

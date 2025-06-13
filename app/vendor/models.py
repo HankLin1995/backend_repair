@@ -6,7 +6,7 @@ class Vendor(Base):
     __tablename__ = "vendors"
     
     vendor_id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.project_id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"), nullable=False)
     vendor_name = Column(String, nullable=False)
     contact_person = Column(String)
     phone = Column(String)

@@ -6,7 +6,7 @@ class DefectCategory(Base):
     __tablename__ = "defect_categories"
     
     defect_category_id = Column(Integer, primary_key=True, index=True)
-    project_id = Column(Integer, ForeignKey("projects.project_id"), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"), nullable=False)
     category_name = Column(String, nullable=False)
     description = Column(Text)
     

@@ -2,7 +2,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 class DefectMarkBase(BaseModel):
-    defect_form_id: int
+    # defect_mark_id: int
+    defect_id: int
     base_map_id: int
     coordinate_x: float
     coordinate_y: float
