@@ -44,7 +44,7 @@ def read_defects(
     assigned_vendor_id: Optional[int] = None,
     status: Optional[str] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=100),
+    limit: int = Query(1000),
     db: Session = Depends(get_db)
 ):
     """Get a list of defects with pagination and optional filtering"""
