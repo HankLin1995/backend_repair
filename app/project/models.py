@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 from datetime import datetime
+import uuid
 
 class Project(Base):
     __tablename__ = "projects"
@@ -10,6 +11,7 @@ class Project(Base):
     project_name = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     image_path = Column(String, default="static/project/default.png")
+    unique_code = Column(String, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
     
     # Relationships
     permissions = relationship("Permission", back_populates="project")

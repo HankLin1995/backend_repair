@@ -24,6 +24,7 @@ class VendorUpdate(BaseModel):
 
 class VendorOut(VendorBase):
     vendor_id: int
+    unique_code: str
     
     model_config = {"from_attributes": True}
 

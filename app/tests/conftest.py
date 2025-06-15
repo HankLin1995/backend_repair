@@ -152,6 +152,7 @@ def test_defect_category(db, test_project):
 @pytest.fixture
 def test_defect(db, test_project, test_user, test_defect_category, test_vendor):
     from app.defect.models import Defect
+    import uuid
     
     defect = Defect(
         project_id=test_project.project_id,
@@ -161,7 +162,8 @@ def test_defect(db, test_project, test_user, test_defect_category, test_vendor):
         assigned_vendor_id=test_vendor.vendor_id,
         expected_completion_day=datetime.now() + timedelta(days=7),
         status="等待中",
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
+        unique_code=str(uuid.uuid4())
     )
     db.add(defect)
     db.commit()

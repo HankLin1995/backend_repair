@@ -35,6 +35,7 @@ class DefectUpdate(BaseModel):
 
 class DefectOut(DefectBase):
     defect_id: int
+    unique_code: str
     confirmer_id: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None

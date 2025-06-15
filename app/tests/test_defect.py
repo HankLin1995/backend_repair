@@ -29,6 +29,8 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
     assert defect.status == "等待中"
     assert defect.defect_id is not None
     assert defect.created_at is not None
+    assert defect.unique_code is not None
+    assert isinstance(defect.unique_code, str)
 
 def test_get_defect(db, test_defect):
     # Get defect
@@ -43,6 +45,8 @@ def test_get_defect(db, test_defect):
     assert defect.defect_description == test_defect.defect_description
     assert defect.assigned_vendor_id == test_defect.assigned_vendor_id
     assert defect.status == test_defect.status
+    assert defect.unique_code == test_defect.unique_code
+    assert isinstance(defect.unique_code, str)
 
 def test_get_defects(db, test_defect):
     # Create another defect
@@ -341,7 +345,7 @@ def test_api_read_defect(client, test_defect):
     # Send request
     response = client.get(f"/defects/{test_defect.defect_id}")
     
-    # Check response
+    # Check response data
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["defect_id"] == test_defect.defect_id
@@ -349,6 +353,7 @@ def test_api_read_defect(client, test_defect):
     assert data["submitted_id"] == test_defect.submitted_id
     assert data["defect_description"] == test_defect.defect_description
     assert data["status"] == test_defect.status
+    assert data["unique_code"] == test_defect.unique_code
 
 def test_api_read_defect_full(client, test_defect, test_defect_mark, test_photo):
     # Send request

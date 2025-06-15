@@ -27,6 +27,8 @@ def test_create_vendor(db, test_project):
     assert vendor.email == "test_vendor@example.com"
     assert vendor.line_id == "lineid_vendor"
     assert vendor.vendor_id is not None
+    assert vendor.unique_code is not None
+    assert len(vendor.unique_code) > 0
 
 def test_get_vendor(db, test_vendor):
     # Get vendor
@@ -42,6 +44,7 @@ def test_get_vendor(db, test_vendor):
     assert vendor.responsibilities == test_vendor.responsibilities
     assert vendor.email == test_vendor.email
     assert vendor.line_id == test_vendor.line_id
+    assert vendor.unique_code == test_vendor.unique_code
 
 def test_update_vendor(db, test_vendor):
     update_data = VendorUpdate(
@@ -76,6 +79,8 @@ def test_api_create_vendor(client, test_project):
     assert data["vendor_name"] == "API Vendor"
     assert data["email"] == "api_vendor@example.com"
     assert data["line_id"] == "api_lineid_vendor"
+    assert "unique_code" in data
+    assert len(data["unique_code"]) > 0
 
 def test_api_update_vendor(client, test_vendor):
     update_data = {
@@ -100,6 +105,8 @@ def test_api_get_vendor(client, test_vendor):
     assert data["vendor_id"] == test_vendor.vendor_id
     assert "email" in data
     assert "line_id" in data
+    assert "unique_code" in data
+    assert data["unique_code"] == test_vendor.unique_code
 
 def test_get_vendors(db, test_vendor, test_project):
     # Create another vendor

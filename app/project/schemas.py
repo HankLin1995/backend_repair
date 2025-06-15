@@ -17,6 +17,7 @@ class ProjectOut(ProjectBase):
     project_id: int
     created_at: datetime
     image_path: Optional[str] = "static/project/default.png"
+    unique_code: str
     
     model_config = {"from_attributes": True}
 

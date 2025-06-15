@@ -17,6 +17,8 @@ def test_create_project(db):
     assert project.project_id is not None
     assert project.created_at is not None
     assert project.image_path == "static/project/custom.png"
+    assert project.unique_code is not None
+    assert len(project.unique_code) > 0
 
 def test_get_project(db, test_project):
     # Get project
@@ -27,6 +29,7 @@ def test_get_project(db, test_project):
     assert project.project_id == test_project.project_id
     assert project.project_name == test_project.project_name
     assert project.image_path == test_project.image_path
+    assert project.unique_code == test_project.unique_code
 
 def test_get_projects(db, test_project):
     # Create another project
@@ -83,6 +86,8 @@ def test_api_create_project(client):
     assert "project_id" in data
     assert "created_at" in data
     assert data["image_path"] == "static/project/api.png"
+    assert "unique_code" in data
+    assert len(data["unique_code"]) > 0
 
 def test_api_read_projects(client, test_project):
     # Send request
@@ -105,6 +110,7 @@ def test_api_read_project(client, test_project):
     assert data["project_id"] == test_project.project_id
     assert data["project_name"] == test_project.project_name
     assert data["image_path"] == test_project.image_path
+    assert data["unique_code"] == test_project.unique_code
 
 def test_api_update_project(client, test_project):
     # Create update data

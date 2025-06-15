@@ -72,6 +72,9 @@ def get_vendors_with_defect_counts(db: Session) -> List[Dict[str, Any]]:
             "contact_person": vendor.contact_person,
             "phone": vendor.phone,
             "responsibilities": vendor.responsibilities,
+            "email": vendor.email,
+            "line_id": vendor.line_id,
+            "unique_code": vendor.unique_code,
             "defect_count": defect_count
         })
     

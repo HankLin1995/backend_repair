@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
+import uuid
 
 class Vendor(Base):
     __tablename__ = "vendors"
@@ -13,6 +14,7 @@ class Vendor(Base):
     responsibilities = Column(Text)
     email = Column(String)
     line_id = Column(String)
+    unique_code = Column(String, default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
     
     # Relationships
     project = relationship("Project", back_populates="vendors")
