@@ -75,7 +75,7 @@ def read_defect_stats(
 @router.get("/{defect_id}", response_model=schemas.DefectDetailOut)
 def read_defect(defect_id: int, db: Session = Depends(get_db)):
     """Get a specific defect by ID with details"""
-    defect_data = crud.get_defect_with_details(db, defect_id=defect_id)
+    defect_data = crud.get_defect_details(db, defect_id=defect_id)
     if defect_data is None:
         raise HTTPException(status_code=404, detail="Defect not found")
     return defect_data
@@ -83,7 +83,7 @@ def read_defect(defect_id: int, db: Session = Depends(get_db)):
 @router.get("/{defect_id}/full", response_model=schemas.DefectFullDetailOut)
 def read_defect_full(defect_id: int, db: Session = Depends(get_db)):
     """Get a specific defect by ID with all related data including complete entity details"""
-    defect_data = crud.get_defect_with_full_details(db, defect_id=defect_id)
+    defect_data = crud.get_defect_details(db, defect_id=defect_id, with_marks=True, with_photos=True, with_improvements=True, with_full_related=True)
     if defect_data is None:
         raise HTTPException(status_code=404, detail="Defect not found")
     return defect_data

@@ -27,7 +27,7 @@ def get_defects(
     assigned_vendor_id: Optional[int] = None,
     responsible_vendor_id: Optional[int] = None,
     status: Optional[str] = None
-) -> List[Defect]:
+    ) -> List[Defect]:
     """Get a list of defects with pagination and optional filtering"""
     query = db.query(Defect)
     
@@ -59,20 +59,34 @@ def get_defects_with_details(
     assigned_vendor_id: Optional[int] = None,
     responsible_vendor_id: Optional[int] = None,
     status: Optional[str] = None
-) -> List[Dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
     """Get a list of defects with details including category name and vendor name"""
-    # 獲取基本的缺失列表
-    defects = get_defects(
-        db, 
-        skip=skip, 
-        limit=limit,
-        project_id=project_id,
-        submitted_id=submitted_id,
-        defect_category_id=defect_category_id,
-        assigned_vendor_id=assigned_vendor_id,
-        responsible_vendor_id=responsible_vendor_id,
-        status=status
-    )
+    # 使用 joinedload 一次性載入關聯資料
+    query = db.query(Defect)\
+        .options(
+            joinedload(Defect.project),
+            joinedload(Defect.submitter),
+            joinedload(Defect.category),
+            joinedload(Defect.assigned_vendor),
+            joinedload(Defect.responsible_vendor)
+        )
+    
+    # 套用過濾條件
+    if project_id:
+        query = query.filter(Defect.project_id == project_id)
+    if submitted_id:
+        query = query.filter(Defect.submitted_id == submitted_id)
+    if defect_category_id:
+        query = query.filter(Defect.defect_category_id == defect_category_id)
+    if assigned_vendor_id:
+        query = query.filter(Defect.assigned_vendor_id == assigned_vendor_id)
+    if responsible_vendor_id:
+        query = query.filter(Defect.responsible_vendor_id == responsible_vendor_id)
+    if status:
+        query = query.filter(Defect.status == status)
+    
+    # 套用分頁
+    defects = query.offset(skip).limit(limit).all()
     
     result = []
     for defect in defects:
@@ -91,58 +105,15 @@ def get_defects_with_details(
             "responsible_vendor_id": defect.responsible_vendor_id,
             "previous_defect_id": defect.previous_defect_id,
             "status": defect.status,
-            "created_at": defect.created_at
+            "created_at": defect.created_at,
+            
+            # 直接從關聯資料中獲取名稱
+            "project_name": defect.project.project_name if defect.project else None,
+            "submitter_name": defect.submitter.name if defect.submitter else None,
+            "category_name": defect.category.category_name if defect.category else None,
+            "assigned_vendor_name": defect.assigned_vendor.vendor_name if defect.assigned_vendor else None,
+            "responsible_vendor_name": defect.responsible_vendor.vendor_name if defect.responsible_vendor else None
         }
-        
-        # 獲取專案名稱
-        project = db.query(Project).filter(Project.project_id == defect.project_id).first()
-        if project:
-            defect_data["project_name"] = project.project_name
-        else:
-            defect_data["project_name"] = None
-        
-        # 獲取提交者名稱
-        submitter = db.query(User).filter(User.user_id == defect.submitted_id).first()
-        if submitter:
-            defect_data["submitter_name"] = submitter.name
-        else:
-            defect_data["submitter_name"] = None
-        
-        # 獲取分類名稱
-        if defect.defect_category_id:
-            category = db.query(DefectCategory).filter(
-                DefectCategory.defect_category_id == defect.defect_category_id
-            ).first()
-            if category:
-                defect_data["category_name"] = category.category_name
-            else:
-                defect_data["category_name"] = None
-        else:
-            defect_data["category_name"] = None
-        
-        # 獲取指派廠商名稱
-        if defect.assigned_vendor_id:
-            assigned_vendor = db.query(Vendor).filter(
-                Vendor.vendor_id == defect.assigned_vendor_id
-            ).first()
-            if assigned_vendor:
-                defect_data["assigned_vendor_name"] = assigned_vendor.vendor_name
-            else:
-                defect_data["assigned_vendor_name"] = None
-        else:
-            defect_data["assigned_vendor_name"] = None
-        
-        # 獲取負責廠商名稱
-        if defect.responsible_vendor_id:
-            responsible_vendor = db.query(Vendor).filter(
-                Vendor.vendor_id == defect.responsible_vendor_id
-            ).first()
-            if responsible_vendor:
-                defect_data["responsible_vendor_name"] = responsible_vendor.vendor_name
-            else:
-                defect_data["responsible_vendor_name"] = None
-        else:
-            defect_data["responsible_vendor_name"] = None
         
         result.append(defect_data)
     
@@ -180,221 +151,140 @@ def delete_defect(db: Session, defect_id: int) -> bool:
     db.commit()
     return True
 
-def get_defect_with_details(db: Session, defect_id: int) -> Optional[Dict[str, Any]]:
+def get_defect_details(
+    db: Session,
+    defect_id: int,
+    with_marks: bool = False,
+    with_photos: bool = False,
+    with_improvements: bool = False,
+    with_full_related: bool = False
+    ) -> Optional[Dict[str, Any]]:
     """Get a defect with related details"""
     # 使用 aliased 來處理相同表格的多次 join
-    SubmitterUser = aliased(User)
-    AssignedVendor = aliased(Vendor)
-    ResponsibleVendor = aliased(Vendor)
-    
-    # Query the defect with all related entities
-    defect = (
-        db.query(
-            Defect,
-            Project.project_name,
-            SubmitterUser.name.label("submitter_name"),
-            DefectCategory.category_name,
-            AssignedVendor.vendor_name.label("assigned_vendor_name"),
-            ResponsibleVendor.vendor_name.label("responsible_vendor_name")
-        )
-        .join(Project, Defect.project_id == Project.project_id)
-        .join(SubmitterUser, Defect.submitted_id == SubmitterUser.user_id, isouter=True)
-        .join(DefectCategory, Defect.defect_category_id == DefectCategory.defect_category_id, isouter=True)
-        .join(AssignedVendor, Defect.assigned_vendor_id == AssignedVendor.vendor_id, isouter=True)
-        .join(ResponsibleVendor, Defect.responsible_vendor_id == ResponsibleVendor.vendor_id, isouter=True)
-        .filter(Defect.defect_id == defect_id)
-        .first()
-    )
-    
-    if not defect:
+    # 決定 joinedload 深度
+    options = [
+        joinedload(Defect.project),
+        joinedload(Defect.submitter),
+        joinedload(Defect.category),
+        joinedload(Defect.assigned_vendor),
+        joinedload(Defect.responsible_vendor)
+    ]
+    if with_marks:
+        options.append(joinedload(Defect.defect_marks))
+    if with_improvements:
+        options.append(joinedload(Defect.improvements))
+
+    defect_obj = db.query(Defect).filter(Defect.defect_id == defect_id).options(*options).first()
+    if not defect_obj:
         return None
-    
-    defect_obj, project_name, submitter_name, category_name, assigned_vendor_name, responsible_vendor_name = defect
-    
-    # Create result dictionary
-    result = {
+
+    # 基本資料
+    defect_data = {
         "defect_id": defect_obj.defect_id,
+        "unique_code": defect_obj.unique_code,
         "project_id": defect_obj.project_id,
-        "project_name": project_name,
         "submitted_id": defect_obj.submitted_id,
-        "submitter_name": submitter_name,
+        "location": defect_obj.location,
         "defect_category_id": defect_obj.defect_category_id,
-        "category_name": category_name,
         "defect_description": defect_obj.defect_description,
         "assigned_vendor_id": defect_obj.assigned_vendor_id,
-        "assigned_vendor_name": assigned_vendor_name,
-        "responsible_vendor_id": defect_obj.responsible_vendor_id,
-        "responsible_vendor_name": responsible_vendor_name,
         "repair_description": defect_obj.repair_description,
         "expected_completion_day": defect_obj.expected_completion_day,
+        "responsible_vendor_id": defect_obj.responsible_vendor_id,
         "previous_defect_id": defect_obj.previous_defect_id,
         "status": defect_obj.status,
         "created_at": defect_obj.created_at,
-        "unique_code": defect_obj.unique_code,
-        "location": defect_obj.location
+        "confirmer_id": defect_obj.confirmer_id,
+        "project_name": defect_obj.project.project_name if defect_obj.project else None,
+        "submitter_name": defect_obj.submitter.name if defect_obj.submitter else None,
+        "category_name": defect_obj.category.category_name if defect_obj.category else None,
+        "assigned_vendor_name": defect_obj.assigned_vendor.vendor_name if defect_obj.assigned_vendor else None,
+        "responsible_vendor_name": defect_obj.responsible_vendor.vendor_name if defect_obj.responsible_vendor else None
     }
-    
-    return result
 
-def get_defect_with_marks_and_photos(db: Session, defect_id: int) -> Optional[Dict[str, Any]]:
-    """Get a defect with related details, marks and photos"""
-    # Get defect with basic details
-    defect_data = get_defect_with_details(db, defect_id)
-    if not defect_data:
-        return None
-    
-    # Get defect marks
-    defect_marks = (
-        db.query(DefectMark)
-        .filter(DefectMark.defect_id == defect_id)
-        .all()
-    )
-    
-    marks_data = []
-    for mark in defect_marks:
-        marks_data.append({
-            "defect_mark_id": mark.defect_mark_id,
-            "defect_id": mark.defect_id,
-            "base_map_id": mark.base_map_id,
-            "coordinate_x": mark.coordinate_x,
-            "coordinate_y": mark.coordinate_y,
-            "scale": mark.scale
-        })
-    
-    # Get photos
-    photos = (
-        db.query(Photo)
-        .filter(Photo.related_type == "defect")
-        .filter(Photo.related_id == defect_id)
-        .all()
-    )
-    
-    photos_data = []
-    for photo in photos:
-        photos_data.append({
-            "photo_id": photo.photo_id,
-            "related_type": photo.related_type,
-            "related_id": photo.related_id,
-            "description": photo.description,
-            "image_url": photo.image_url,
-            "created_at": photo.created_at
-        })
-    
-    # Get improvements
-    improvements = (
-        db.query(Improvement)
-        .filter(Improvement.defect_id == defect_id)
-        .all()
-    )
-    
-    improvements_data = []
-    for improvement in improvements:
-        improvements_data.append({
-            "improvement_id": improvement.improvement_id,
-            "defect_id": improvement.defect_id,
-            "submitter_id": improvement.submitter_id,
-            "content": improvement.content,
-            "improvement_date": improvement.improvement_date,
-            "created_at": improvement.created_at
-        })
-    
-    # Add marks, photos, and improvements to result
-    defect_data["defect_marks"] = marks_data
-    defect_data["photos"] = photos_data
-    defect_data["improvements"] = improvements_data
-    
-    return defect_data
-
-def get_defect_with_full_details(db: Session, defect_id: int) -> Optional[Dict[str, Any]]:
-    """Get a defect with full details including related entities"""
-    # 獲取基本的缺失資訊與相關實體
-    defect_data = get_defect_with_marks_and_photos(db, defect_id)
-    if not defect_data:
-        return None
-    
-    # 獲取完整的 defect_category 資訊
-    if defect_data.get("defect_category_id"):
-        category = db.query(DefectCategory).filter(
-            DefectCategory.defect_category_id == defect_data["defect_category_id"]
-        ).first()
-        if category:
+    # 標記
+    if with_marks:
+        defect_data["defect_marks"] = [
+            {
+                "defect_mark_id": mark.defect_mark_id,
+                "defect_id": mark.defect_id,
+                "base_map_id": mark.base_map_id,
+                "coordinate_x": mark.coordinate_x,
+                "coordinate_y": mark.coordinate_y,
+                "scale": mark.scale
+            } for mark in defect_obj.defect_marks
+        ]
+    # 照片
+    if with_photos:
+        photos = (
+            db.query(Photo)
+            .filter(Photo.related_type == "defect")
+            .filter(Photo.related_id == defect_id)
+            .all()
+        )
+        defect_data["photos"] = [
+            {
+                "photo_id": photo.photo_id,
+                "related_type": photo.related_type,
+                "related_id": photo.related_id,
+                "description": photo.description,
+                "image_url": photo.image_url,
+                "created_at": photo.created_at
+            } for photo in photos
+        ]
+    # 改善
+    if with_improvements:
+        defect_data["improvements"] = [
+            {
+                "improvement_id": improvement.improvement_id,
+                "defect_id": improvement.defect_id,
+                "submitter_id": improvement.submitter_id,
+                "content": improvement.content,
+                "improvement_date": improvement.improvement_date,
+                "created_at": improvement.created_at
+            } for improvement in defect_obj.improvements
+        ]
+    # 完整關聯
+    if with_full_related:
+        if defect_obj.category:
             defect_data["defect_category"] = {
-                "defect_category_id": category.defect_category_id,
-                "category_name": category.category_name,
-                "description": category.description
+                "defect_category_id": defect_obj.category.defect_category_id,
+                "category_name": defect_obj.category.category_name,
+                "description": defect_obj.category.description
             }
-    
-    # 獲取完整的 assigned_vendor 資訊
-    if defect_data.get("assigned_vendor_id"):
-        assigned_vendor = db.query(Vendor).filter(
-            Vendor.vendor_id == defect_data["assigned_vendor_id"]
-        ).first()
-        if assigned_vendor:
+        if defect_obj.assigned_vendor:
             defect_data["assigned_vendor"] = {
-                "vendor_id": assigned_vendor.vendor_id,
-                "vendor_name": assigned_vendor.vendor_name,
-                "contact_person": assigned_vendor.contact_person,
-                "phone": assigned_vendor.phone,
-                "email": assigned_vendor.email,
-                "responsibilities": assigned_vendor.responsibilities
+                "vendor_id": defect_obj.assigned_vendor.vendor_id,
+                "vendor_name": defect_obj.assigned_vendor.vendor_name,
+                "contact_person": defect_obj.assigned_vendor.contact_person,
+                "phone": defect_obj.assigned_vendor.phone,
+                "email": defect_obj.assigned_vendor.email,
+                "responsibilities": defect_obj.assigned_vendor.responsibilities
             }
-    
-    # 獲取完整的 responsible_vendor 資訊
-    if defect_data.get("responsible_vendor_id"):
-        responsible_vendor = db.query(Vendor).filter(
-            Vendor.vendor_id == defect_data["responsible_vendor_id"]
-        ).first()
-        if responsible_vendor:
+        if defect_obj.responsible_vendor:
             defect_data["responsible_vendor"] = {
-                "vendor_id": responsible_vendor.vendor_id,
-                "vendor_name": responsible_vendor.vendor_name,
-                "contact_person": responsible_vendor.contact_person,
-                "phone": responsible_vendor.phone,
-                "email": responsible_vendor.email,
-                "responsibilities": responsible_vendor.responsibilities
+                "vendor_id": defect_obj.responsible_vendor.vendor_id,
+                "vendor_name": defect_obj.responsible_vendor.vendor_name,
+                "contact_person": defect_obj.responsible_vendor.contact_person,
+                "phone": defect_obj.responsible_vendor.phone,
+                "email": defect_obj.responsible_vendor.email,
+                "responsibilities": defect_obj.responsible_vendor.responsibilities
             }
-    
-    # 獲取完整的 submitter 資訊
-    if defect_data.get("submitted_id"):
-        submitter = db.query(User).filter(
-            User.user_id == defect_data["submitted_id"]
-        ).first()
-        if submitter:
+        if defect_obj.submitter:
             defect_data["submitter"] = {
-                "user_id": submitter.user_id,
-                "name": submitter.name,
-                "email": submitter.email,
-                "line_id": submitter.line_id,
-                "company_name": submitter.company_name
+                "user_id": defect_obj.submitter.user_id,
+                "name": defect_obj.submitter.name,
+                "email": defect_obj.submitter.email,
+                "line_id": defect_obj.submitter.line_id,
+                "company_name": defect_obj.submitter.company_name
             }
-    
-    # 獲取完整的 confirmer 資訊
-    if defect_data.get("confirmer_id"):
-        confirmer = db.query(User).filter(
-            User.user_id == defect_data["confirmer_id"]
-        ).first()
-        if confirmer:
-            defect_data["confirmer"] = {
-                "user_id": confirmer.user_id,
-                "name": confirmer.name,
-                "email": confirmer.email,
-                "line_id": confirmer.line_id,
-                "company_name": confirmer.company_name
-            }
-    
-    # 獲取完整的 project 資訊
-    if defect_data.get("project_id"):
-        project = db.query(Project).filter(
-            Project.project_id == defect_data["project_id"]
-        ).first()
-        if project:
+        if defect_obj.project:
             defect_data["project"] = {
-                "project_id": project.project_id,
-                "project_name": project.project_name,
-                "image_path": project.image_path,
-                "created_at": project.created_at
+                "project_id": defect_obj.project.project_id,
+                "project_name": defect_obj.project.project_name,
+                "image_path": defect_obj.project.image_path,
+                "created_at": defect_obj.project.created_at
             }
-    
     return defect_data
 
 def get_defect_stats(db: Session, project_id: Optional[int] = None) -> Dict[str, Any]:

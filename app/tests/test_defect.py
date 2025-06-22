@@ -134,9 +134,9 @@ def test_delete_defect(db, test_defect):
     defect = crud.get_defect(db, test_defect.defect_id)
     assert defect is None
 
-def test_get_defect_with_details(db, test_defect, test_project, test_user, test_defect_category, test_vendor):
+def test_get_defect_details(db, test_defect, test_project, test_user, test_defect_category, test_vendor):
     # Get defect with details
-    defect_data = crud.get_defect_with_details(db, test_defect.defect_id)
+    defect_data = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True, with_improvements=True, with_full_related=True)
     
     # Check defect data was retrieved correctly
     assert defect_data is not None
@@ -164,7 +164,7 @@ def test_get_defect_with_details(db, test_defect, test_project, test_user, test_
 
 def test_get_defect_with_marks_and_photos(db, test_defect, test_defect_mark, test_photo):
     # Get defect with marks and photos
-    defect_data = crud.get_defect_with_marks_and_photos(db, test_defect.defect_id)
+    defect_data = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True, with_improvements=True)
     
     # Check defect data was retrieved correctly
     assert defect_data is not None
@@ -479,7 +479,7 @@ def test_defect_improvement_relation(db, test_defect, test_user):
     assert any(imp.improvement_id == improvement.improvement_id for imp in improvements)
     
     # 透過 get_defect_with_marks_and_photos 取得完整資訊（包含改善單）
-    defect_with_details = crud.get_defect_with_marks_and_photos(db, test_defect.defect_id)
+    defect_with_details = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True, with_improvements=True)
     assert "improvements" in defect_with_details
     assert len(defect_with_details["improvements"]) >= 1
 
