@@ -72,6 +72,15 @@ def read_defect_stats(
     
     return crud.get_defect_stats(db, project_id=project_id)
 
+@router.get("/unique_code/{unique_code}", response_model=schemas.DefectOut)
+def read_defect_by_unique_code(
+    unique_code: str,
+    db: Session = Depends(get_db)
+):
+    """Get a specific defect by unique code"""
+    return crud.get_defect_by_unique_code(db, unique_code=unique_code)
+
+
 @router.get("/{defect_id}", response_model=Union[schemas.DefectDetailOut, schemas.DefectWithMarksAndPhotosOut, schemas.DefectFullDetailOut])
 def read_defect(
     defect_id: int, 

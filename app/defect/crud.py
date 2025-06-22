@@ -17,6 +17,10 @@ def get_defect(db: Session, defect_id: int) -> Optional[Defect]:
     """Get a single defect by ID"""
     return db.query(Defect).filter(Defect.defect_id == defect_id).first()
 
+def get_defect_by_unique_code(db: Session, unique_code: str) -> Optional[Defect]:
+    """Get a single defect by unique code"""
+    return db.query(Defect).filter(Defect.unique_code == unique_code).first()
+
 def get_defects(
     db: Session, 
     skip: int = 0, 
