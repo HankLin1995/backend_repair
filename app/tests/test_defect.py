@@ -71,7 +71,7 @@ def test_get_defects(db, test_defect):
     assert any(d.defect_description == test_defect.defect_description for d in defects)
     assert any(d.defect_description == "Another test defect description" for d in defects)
 
-def test_get_defects_with_filters(db, test_defect, test_project, test_user, test_defect_category, test_vendor):
+def test_get_defects_with_filters(db, test_defect, test_project, test_user):
     # Test filtering by project
     defects = crud.get_defects(db, project_id=test_project.project_id)
     assert len(defects) >= 1
@@ -163,33 +163,23 @@ def test_get_defect_details(db, test_defect, test_project, test_user, test_defec
     assert defect_data["status"] == test_defect.status
 
 def test_get_defect_with_marks_and_photos(db, test_defect, test_defect_mark, test_photo):
-    # Get defect with marks and photos
-    defect_data = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True, with_improvements=True)
+    """此測試已棄用，功能已合併到 test_get_defect_details"""
+    # 使用新的 get_defect_details 函數，但僅測試標記和照片
+    defect_data = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True)
     
-    # Check defect data was retrieved correctly
+    # 基本檢查
     assert defect_data is not None
     assert defect_data["defect_id"] == test_defect.defect_id
     
-    # Check defect marks
+    # 檢查標記資料
     assert "defect_marks" in defect_data
     assert len(defect_data["defect_marks"]) >= 1
-    mark = defect_data["defect_marks"][0]
-    assert mark["defect_mark_id"] == test_defect_mark.defect_mark_id
-    assert mark["defect_id"] == test_defect_mark.defect_id
-    assert mark["base_map_id"] == test_defect_mark.base_map_id
-    assert mark["coordinate_x"] == test_defect_mark.coordinate_x
-    assert mark["coordinate_y"] == test_defect_mark.coordinate_y
-    assert mark["scale"] == test_defect_mark.scale
+    assert any(mark["defect_mark_id"] == test_defect_mark.defect_mark_id for mark in defect_data["defect_marks"])
     
-    # Check photos
+    # 檢查照片資料
     assert "photos" in defect_data
     assert len(defect_data["photos"]) >= 1
-    photo = defect_data["photos"][0]
-    assert photo["photo_id"] == test_photo.photo_id
-    assert photo["related_type"] == test_photo.related_type
-    assert photo["related_id"] == test_photo.related_id
-    assert photo["description"] == test_photo.description
-    assert photo["image_url"] == test_photo.image_url
+    assert any(photo["photo_id"] == test_photo.photo_id for photo in defect_data["photos"])
 
 def test_get_defect_stats(db, test_defect, test_project):
     # Get defect stats
@@ -366,21 +356,29 @@ def test_api_read_defect(client, test_defect):
     assert data["unique_code"] == test_defect.unique_code
 
 def test_api_read_defect_full(client, test_defect, test_defect_mark, test_photo):
-    # Send request
-    response = client.get(f"/defects/{test_defect.defect_id}/full")
-    
-    # Check response
+    # 使用帶參數的 API 端點取得完整資料，使用 params 參數正確傳遞布林值
+    params = {
+        "with_marks": "true",
+        "with_photos": "true",
+        "with_improvements": "true",
+        "with_full_related": "true"
+    }
+    response = client.get(f"/defects/{test_defect.defect_id}", params=params)
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["defect_id"] == test_defect.defect_id
-    
-    # Check defect marks
+
+    # 檢查標記資料
     assert "defect_marks" in data
     assert len(data["defect_marks"]) >= 1
     
-    # Check photos
+    # 檢查照片資料
     assert "photos" in data
     assert len(data["photos"]) >= 1
+    
+    # 檢查關聯資料
+    if "project" in data:
+        assert data["project"]["project_id"] == test_defect.project_id
 
 def test_api_read_defect_not_found(client):
     # Send request with non-existent ID
@@ -478,10 +476,11 @@ def test_defect_improvement_relation(db, test_defect, test_user):
     assert len(improvements) >= 1
     assert any(imp.improvement_id == improvement.improvement_id for imp in improvements)
     
-    # 透過 get_defect_with_marks_and_photos 取得完整資訊（包含改善單）
-    defect_with_details = crud.get_defect_details(db, test_defect.defect_id, with_marks=True, with_photos=True, with_improvements=True)
+    # 使用 get_defect_details 取得完整資訊（包含改善單）
+    defect_with_details = crud.get_defect_details(db, test_defect.defect_id, with_improvements=True)
     assert "improvements" in defect_with_details
     assert len(defect_with_details["improvements"]) >= 1
+    assert any(imp["improvement_id"] == improvement.improvement_id for imp in defect_with_details["improvements"])
 
 
 # 新增測試案例：複合條件篩選測試
