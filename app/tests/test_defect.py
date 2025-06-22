@@ -10,6 +10,7 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
     defect_data = DefectCreate(
         project_id=test_project.project_id,
         submitted_id=test_user.user_id,
+        location="A标1F-101",
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
@@ -56,6 +57,7 @@ def test_get_defects(db, test_defect):
     defect_data = DefectCreate(
         project_id=test_defect.project_id,
         submitted_id=test_defect.submitted_id,
+        location="A标1F-102",
         defect_description="Another test defect description",
         status="改善中"
     )
@@ -218,6 +220,7 @@ def test_api_create_defect(client, test_project, test_user, test_defect_category
     defect_data = {
         "project_id": test_project.project_id,
         "submitted_id": test_user.user_id,
+        "location": "A标1F-201",
         "defect_category_id": test_defect_category.defect_category_id,
         "defect_description": "API Test defect description",
         "assigned_vendor_id": test_vendor.vendor_id,

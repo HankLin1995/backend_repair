@@ -11,6 +11,7 @@ class Defect(Base):
     unique_code = Column(String, default=lambda: str(uuid.uuid4()), nullable=False, unique=True)
     project_id = Column(Integer, ForeignKey("projects.project_id", ondelete="CASCADE"))
     submitted_id = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"))
+    location = Column(String, nullable=True)  # 缺失地點
     defect_category_id = Column(Integer, ForeignKey("defect_categories.defect_category_id", ondelete="SET NULL"))
     defect_description = Column(Text)
     assigned_vendor_id = Column(Integer, ForeignKey("vendors.vendor_id", ondelete="SET NULL"))

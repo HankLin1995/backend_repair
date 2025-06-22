@@ -82,6 +82,7 @@ def get_defects_with_details(
             "unique_code": defect.unique_code,
             "project_id": defect.project_id,
             "submitted_id": defect.submitted_id,
+            "location": defect.location,
             "defect_category_id": defect.defect_category_id,
             "defect_description": defect.defect_description,
             "assigned_vendor_id": defect.assigned_vendor_id,
@@ -229,7 +230,8 @@ def get_defect_with_details(db: Session, defect_id: int) -> Optional[Dict[str, A
         "previous_defect_id": defect_obj.previous_defect_id,
         "status": defect_obj.status,
         "created_at": defect_obj.created_at,
-        "unique_code": defect_obj.unique_code
+        "unique_code": defect_obj.unique_code,
+        "location": defect_obj.location
     }
     
     return result

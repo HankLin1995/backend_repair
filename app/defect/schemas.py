@@ -10,6 +10,7 @@ from app.project.schemas import ProjectOut
 class DefectBase(BaseModel):
     project_id: int
     submitted_id: int
+    location: Optional[str] = None  # 缺失地點
     defect_category_id: Optional[int] = None
     defect_description: str
     assigned_vendor_id: Optional[int] = None
@@ -24,6 +25,7 @@ class DefectCreate(DefectBase):
     # confirmer_id: Optional[int] = None
 
 class DefectUpdate(BaseModel):
+    location: Optional[str] = None
     defect_category_id: Optional[int] = None
     defect_description: Optional[str] = None
     assigned_vendor_id: Optional[int] = None
@@ -45,6 +47,7 @@ class DefectOut(DefectBase):
 class DefectDetailOut(DefectOut):
     project_name: str
     submitter_name: str
+    location: Optional[str] = None
     category_name: Optional[str] = None
     assigned_vendor_name: Optional[str] = None
     responsible_vendor_name: Optional[str] = None
@@ -83,6 +86,7 @@ class PhotoOut(PhotoBase):
 
 class DefectFullDetailOut(DefectWithMarksAndPhotosOut):
     """完整的缺失詳細資訊，包含所有相關實體的完整資料"""
+    location: Optional[str] = None
     defect_category: Optional[Dict[str, Any]] = None
     assigned_vendor: Optional[Dict[str, Any]] = None
     responsible_vendor: Optional[Dict[str, Any]] = None
