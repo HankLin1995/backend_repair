@@ -13,6 +13,7 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
         defect_category_id=test_defect_category.defect_category_id,
         defect_description="Test defect description",
         assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
         expected_completion_day=date.today() + timedelta(days=7),
         status="等待中"
     )
@@ -26,6 +27,7 @@ def test_create_defect(db, test_project, test_user, test_defect_category, test_v
     assert defect.defect_category_id == test_defect_category.defect_category_id
     assert defect.defect_description == "Test defect description"
     assert defect.assigned_vendor_id == test_vendor.vendor_id
+    assert defect.responsible_vendor_id == test_vendor.vendor_id
     assert defect.status == "等待中"
     assert defect.defect_id is not None
     assert defect.created_at is not None
@@ -44,6 +46,7 @@ def test_get_defect(db, test_defect):
     assert defect.defect_category_id == test_defect.defect_category_id
     assert defect.defect_description == test_defect.defect_description
     assert defect.assigned_vendor_id == test_defect.assigned_vendor_id
+    assert defect.responsible_vendor_id == test_defect.responsible_vendor_id
     assert defect.status == test_defect.status
     assert defect.unique_code == test_defect.unique_code
     assert isinstance(defect.unique_code, str)
@@ -150,6 +153,10 @@ def test_get_defect_with_details(db, test_defect, test_project, test_user, test_
     if test_defect.assigned_vendor_id:
         assert defect_data["assigned_vendor_id"] == test_defect.assigned_vendor_id
         assert defect_data["assigned_vendor_name"] == test_vendor.vendor_name
+    
+    if test_defect.responsible_vendor_id:
+        assert defect_data["responsible_vendor_id"] == test_defect.responsible_vendor_id
+        assert defect_data["responsible_vendor_name"] == test_vendor.vendor_name
     
     assert defect_data["status"] == test_defect.status
 

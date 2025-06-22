@@ -15,7 +15,7 @@ class DefectBase(BaseModel):
     assigned_vendor_id: Optional[int] = None
     repair_description: Optional[str] = None
     expected_completion_day: Optional[date] = None
-    # responsible_vendor_id: Optional[int] = None
+    responsible_vendor_id: Optional[int] = None
     previous_defect_id: Optional[int] = None
     status: Optional[str] = None  # 等待中、改善中、待確認、已完成、退件
 
