@@ -125,11 +125,38 @@ def get_defects_with_details(
 
 def create_defect(db: Session, defect: DefectCreate) -> Defect:
     """Create a new defect"""
-    db_defect = Defect(**defect.model_dump())
+    defect_data = defect.model_dump()
+    
+    # 自動設定狀態
+    if not defect_data.get('status'):
+        if defect_data.get('previous_defect_id'):
+            # 1. 取得前置編號的狀態
+            previous_defect = get_defect(db, defect_data.get('previous_defect_id'))
+            if previous_defect:
+                # 2. 判定前置編號狀態是否為"已完成"或者為"退件"
+                if previous_defect.status in ["已完成", "退件"]:
+                    # 3. 如果為真，目前的編號狀態應修正為改善中
+                    defect_data['status'] = "改善中"
+                else:
+                    # 4. 如果為假，目前的編號狀態應修正為等待中
+                    defect_data['status'] = "等待中"
+            else:
+                # 如果找不到前置缺失，預設為「等待中」
+                defect_data['status'] = "等待中"
+        else:
+            # 沒有前置缺失，設為「等待中」
+            defect_data['status'] = "等待中"
+    
+    db_defect = Defect(**defect_data)
     db.add(db_defect)
     db.commit()
     db.refresh(db_defect)
     return db_defect
+
+def get_defects_by_previous_defect_id(db: Session, previous_defect_id: int) -> List[Defect]:
+    """Get all defects that have a specific defect as their previous defect"""
+    return db.query(Defect).filter(Defect.previous_defect_id == previous_defect_id).all()
+
 
 def update_defect(db: Session, defect_id: int, defect: DefectUpdate) -> Optional[Defect]:
     """Update an existing defect"""
@@ -137,12 +164,30 @@ def update_defect(db: Session, defect_id: int, defect: DefectUpdate) -> Optional
     if not db_defect:
         return None
     
+    # 儲存更新前的狀態，以便後續比較
+    old_status = db_defect.status
+    
     update_data = defect.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_defect, key, value)
     
     db.commit()
     db.refresh(db_defect)
+    
+    # 檢查狀態是否更新為「已完成」或「退件」
+    if 'status' in update_data and update_data['status'] in ["已完成", "退件"] and old_status != update_data['status']:
+        # 找出所有以此缺失為前置缺失的缺失單
+        linked_defects = get_defects_by_previous_defect_id(db, defect_id)
+        
+        # 更新這些缺失單的狀態（如果它們目前是「等待中」）
+        for linked_defect in linked_defects:
+            if linked_defect.status == "等待中":
+                linked_defect.status = "改善中"
+        
+        # 一次性提交所有更新
+        if linked_defects:
+            db.commit()
+    
     return db_defect
 
 def delete_defect(db: Session, defect_id: int) -> bool:

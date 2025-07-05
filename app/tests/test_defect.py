@@ -555,3 +555,315 @@ def test_defect_statistics_detailed(db, test_defect, test_project):
         stats["rejected_count"]
     )
     assert stats["total_count"] >= status_sum
+
+
+# 新增測試案例：自動設定狀態測試 - 無前置缺失編號
+def test_defect_status_without_previous_defect(db, test_project, test_user, test_defect_category, test_vendor):
+    # 建立缺失單資料，不設定前置缺失編號和狀態
+    defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-201",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="測試自動狀態設定 - 無前置缺失",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        expected_completion_day=date.today() + timedelta(days=7)
+        # 不設定 previous_defect_id
+        # 不設定 status
+    )
+    
+    # 建立缺失單
+    defect = crud.create_defect(db, defect_data)
+    
+    # 檢查狀態是否自動設為「等待中」
+    assert defect.status == "等待中"
+
+
+# 新增測試案例：自動設定狀態測試 - 有前置缺失編號（非已完成或退件）
+def test_defect_status_with_previous_defect(db, test_defect, test_project, test_user, test_defect_category, test_vendor):
+    # 先確保前置缺失不是已完成或退件狀態
+    if test_defect.status in ["已完成", "退件"]:
+        # 更新測試缺失單的狀態為等待中
+        test_defect.status = "等待中"
+        db.commit()
+        db.refresh(test_defect)
+    
+    # 建立缺失單資料，設定前置缺失編號但不設定狀態
+    defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-202",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="測試自動狀態設定 - 有前置缺失（非已完成或退件）",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        expected_completion_day=date.today() + timedelta(days=7),
+        previous_defect_id=test_defect.defect_id  # 設定前置缺失編號
+        # 不設定 status
+    )
+    
+    # 建立缺失單
+    defect = crud.create_defect(db, defect_data)
+    
+    # 檢查狀態是否自動設為「等待中」，因為前置缺失不是已完成或退件
+    assert defect.status == "等待中"
+
+
+# 新增測試案例：API 自動設定狀態測試 - 無前置缺失編號
+def test_api_defect_status_without_previous_defect(client, test_project, test_user, test_defect_category, test_vendor):
+    # 準備缺失單資料，不設定前置缺失編號和狀態
+    defect_data = {
+        "project_id": test_project.project_id,
+        "submitted_id": test_user.user_id,
+        "location": "A标1F-301",
+        "defect_category_id": test_defect_category.defect_category_id,
+        "defect_description": "API測試自動狀態設定 - 無前置缺失",
+        "assigned_vendor_id": test_vendor.vendor_id,
+        "responsible_vendor_id": test_vendor.vendor_id,
+        "expected_completion_day": (date.today() + timedelta(days=7)).isoformat()
+        # 不設定 previous_defect_id
+        # 不設定 status
+    }
+    
+    # 發送建立請求
+    response = client.post("/defects/", json=defect_data)
+    assert response.status_code == status.HTTP_201_CREATED
+    
+    # 檢查回應中的狀態是否為「等待中」
+    data = response.json()
+    assert data["status"] == "等待中"
+    
+    # 再次從資料庫確認狀態
+    created_defect_id = data["defect_id"]
+    db_defect = client.get(f"/defects/{created_defect_id}").json()
+    assert db_defect["status"] == "等待中"
+
+
+# 新增測試案例：API 自動設定狀態測試 - 有已完成的前置缺失編號
+def test_api_defect_status_with_previous_defect(client, test_defect, test_project, test_user, test_defect_category, test_vendor, db):
+    # 先將前置缺失設為已完成狀態
+    test_defect.status = "已完成"
+    db.commit()
+    db.refresh(test_defect)
+    
+    # 準備缺失單資料，設定前置缺失編號但不設定狀態
+    defect_data = {
+        "project_id": test_project.project_id,
+        "submitted_id": test_user.user_id,
+        "location": "A标1F-302",
+        "defect_category_id": test_defect_category.defect_category_id,
+        "defect_description": "API測試自動狀態設定 - 有已完成的前置缺失",
+        "assigned_vendor_id": test_vendor.vendor_id,
+        "responsible_vendor_id": test_vendor.vendor_id,
+        "expected_completion_day": (date.today() + timedelta(days=7)).isoformat(),
+        "previous_defect_id": test_defect.defect_id  # 設定前置缺失編號
+        # 不設定 status
+    }
+    
+    # 發送建立請求
+    response = client.post("/defects/", json=defect_data)
+    assert response.status_code == status.HTTP_201_CREATED
+    
+    # 檢查回應中的狀態是否為「改善中」，因為前置缺失已完成
+    data = response.json()
+    assert data["status"] == "改善中"
+    
+    # 再次從資料庫確認狀態
+    created_defect_id = data["defect_id"]
+    db_defect = client.get(f"/defects/{created_defect_id}").json()
+    assert db_defect["status"] == "改善中"
+
+
+# 新增測試案例：自動設定狀態測試 - 前置缺失為已完成或退件狀態
+def test_defect_status_with_completed_previous_defect(db, test_project, test_user, test_defect_category, test_vendor):
+    # 先建立一個已完成的缺失單
+    completed_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-401",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="已完成的前置缺失",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        status="已完成"  # 設定為已完成狀態
+    )
+    completed_defect = crud.create_defect(db, completed_defect_data)
+    
+    # 建立新缺失單，其前置缺失為已完成的缺失單
+    new_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-402",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="測試自動狀態設定 - 前置缺失已完成",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        previous_defect_id=completed_defect.defect_id  # 設定前置缺失編號
+        # 不設定 status
+    )
+    
+    # 建立缺失單
+    new_defect = crud.create_defect(db, new_defect_data)
+    
+    # 檢查狀態是否自動設為「改善中」，因為前置缺失已完成
+    assert new_defect.status == "改善中"
+    
+    # 再測試一次退件狀態
+    rejected_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-403",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="退件的前置缺失",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        status="退件"  # 設定為退件狀態
+    )
+    rejected_defect = crud.create_defect(db, rejected_defect_data)
+    
+    # 建立新缺失單，其前置缺失為退件的缺失單
+    another_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-404",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="測試自動狀態設定 - 前置缺失退件",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        previous_defect_id=rejected_defect.defect_id  # 設定前置缺失編號
+        # 不設定 status
+    )
+    
+    # 建立缺失單
+    another_defect = crud.create_defect(db, another_defect_data)
+    
+    # 檢查狀態是否自動設為「改善中」，因為前置缺失為退件
+    assert another_defect.status == "改善中"
+
+
+# 新增測試案例：更新缺失狀態時連動更新相關缺失單
+def test_update_defect_status_updates_linked_defects(db, test_project, test_user, test_defect_category, test_vendor):
+    # 先建立一個等待中的缺失單
+    first_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-501",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="前置缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        status="等待中"  # 設定為等待中狀態
+    )
+    first_defect = crud.create_defect(db, first_defect_data)
+    
+    # 建立一個以上述缺失為前置缺失的缺失單，狀態為等待中
+    linked_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-502",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="連動缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        previous_defect_id=first_defect.defect_id,
+        status="等待中"  # 明確設定為等待中狀態
+    )
+    linked_defect = crud.create_defect(db, linked_defect_data)
+    
+    # 確認連動缺失單的狀態為等待中
+    assert linked_defect.status == "等待中"
+    
+    # 更新前置缺失單的狀態為已完成
+    update_data = DefectUpdate(status="已完成")
+    updated_first_defect = crud.update_defect(db, first_defect.defect_id, update_data)
+    
+    # 重新查詢連動缺失單，確認其狀態已更新為改善中
+    db.refresh(linked_defect)
+    assert linked_defect.status == "改善中"
+    
+    # 再測試一次退件狀態
+    # 先建立一個新的缺失單
+    second_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-503",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="另一個前置缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        status="等待中"  # 設定為等待中狀態
+    )
+    second_defect = crud.create_defect(db, second_defect_data)
+    
+    # 建立一個以上述缺失為前置缺失的缺失單，狀態為等待中
+    another_linked_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-504",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="另一個連動缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        previous_defect_id=second_defect.defect_id,
+        status="等待中"  # 明確設定為等待中狀態
+    )
+    another_linked_defect = crud.create_defect(db, another_linked_defect_data)
+    
+    # 確認連動缺失單的狀態為等待中
+    assert another_linked_defect.status == "等待中"
+    
+    # 更新前置缺失單的狀態為退件
+    update_data = DefectUpdate(status="退件")
+    updated_second_defect = crud.update_defect(db, second_defect.defect_id, update_data)
+    
+    # 重新查詢連動缺失單，確認其狀態已更新為改善中
+    db.refresh(another_linked_defect)
+    assert another_linked_defect.status == "改善中"
+
+
+# 新增測試案例：API 更新缺失狀態時連動更新相關缺失單
+def test_api_update_defect_status_updates_linked_defects(client, db, test_project, test_user, test_defect_category, test_vendor):
+    # 先建立一個等待中的缺失單
+    first_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-601",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="API測試前置缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        status="等待中"  # 設定為等待中狀態
+    )
+    first_defect = crud.create_defect(db, first_defect_data)
+    
+    # 建立一個以上述缺失為前置缺失的缺失單，狀態為等待中
+    linked_defect_data = DefectCreate(
+        project_id=test_project.project_id,
+        submitted_id=test_user.user_id,
+        location="A标1F-602",
+        defect_category_id=test_defect_category.defect_category_id,
+        defect_description="API測試連動缺失單",
+        assigned_vendor_id=test_vendor.vendor_id,
+        responsible_vendor_id=test_vendor.vendor_id,
+        previous_defect_id=first_defect.defect_id,
+        status="等待中"  # 明確設定為等待中狀態
+    )
+    linked_defect = crud.create_defect(db, linked_defect_data)
+    
+    # 確認連動缺失單的狀態為等待中
+    assert linked_defect.status == "等待中"
+    
+    # 透過 API 更新前置缺失單的狀態為已完成
+    update_data = {"status": "已完成"}
+    response = client.put(f"/defects/{first_defect.defect_id}", json=update_data)
+    assert response.status_code == status.HTTP_200_OK
+    
+    # 重新查詢連動缺失單，確認其狀態已更新為改善中
+    db.refresh(linked_defect)
+    assert linked_defect.status == "改善中"
+    
+    # 再次確認透過 API 查詢的結果
+    response = client.get(f"/defects/{linked_defect.defect_id}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["status"] == "改善中"

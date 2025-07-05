@@ -52,7 +52,7 @@ app/
 
 ## 測試規則
 
-- 使用 pytest。
+- 使用 Docker-compose up test --build 。
 - 每個模組一個對應測試資料夾。
 - 測試目標為 crud。
 - 使用 fixture 管理測試資料。
