@@ -1,6 +1,7 @@
 import pytest
 from fastapi import status
 from app.improvement import crud, schemas
+# from app.database import get_db
 
 # CRUD 測試
 
@@ -232,3 +233,53 @@ def test_api_delete_improvement_not_found(client, test_user):
     
     response = client.delete("/improvements/9999")
     assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_create_improvement_updates_defect_status(db, test_defect, test_user):
+    """測試建立改善單時自動更新缺失狀態為「待確認」"""
+    from app.defect.models import Defect
+    
+    # 確認缺失初始狀態
+    defect = db.query(Defect).filter(Defect.defect_id == test_defect.defect_id).first()
+    initial_status = defect.status
+    
+    # 建立改善單
+    improvement_data = schemas.ImprovementCreate(
+        defect_id=test_defect.defect_id,
+        submitter_id=test_user.user_id,
+        content="Test improvement content for status update",
+        improvement_date="2023-01-01"
+    )
+    
+    improvement = crud.create_improvement(db=db, improvement=improvement_data)
+    
+    # 檢查改善單是否成功建立
+    assert improvement.defect_id == test_defect.defect_id
+    assert improvement.content == "Test improvement content for status update"
+    
+    # 檢查缺失狀態是否更新為「待確認」
+    updated_defect = db.query(Defect).filter(Defect.defect_id == test_defect.defect_id).first()
+    assert updated_defect.status == "待確認"
+    assert updated_defect.status != initial_status
+
+
+def test_api_create_improvement_by_unique_code(client, test_defect, db):
+    """測試 API 透過唯一碼建立改善單"""
+    improvement_data = {
+        "content": "Improvement submitted via unique code",
+        "improvement_date": "2023-01-01"
+    }
+    
+    # 透過唯一碼提交改善內容
+    response = client.post(f"/improvements/by-unique-code/{test_defect.unique_code}", json=improvement_data)
+    assert response.status_code == status.HTTP_201_CREATED
+    
+    data = response.json()
+    assert data["defect_id"] == test_defect.defect_id
+    assert data["content"] == "Improvement submitted via unique code"
+    assert data["improvement_date"] == "2023-01-01"
+    
+    # 檢查缺失狀態是否更新為「待確認」
+    from app.defect.models import Defect
+    defect = db.query(Defect).filter(Defect.defect_id == test_defect.defect_id).first()
+    assert defect.status == "待確認"

@@ -18,6 +18,40 @@ def create_improvement(
         improvement.submitter_id = int(x_current_user_id)
     return crud.create_improvement(db=db, improvement=improvement)
 
+@router.post("/by-unique-code/{unique_code}", response_model=schemas.ImprovementOut, status_code=status.HTTP_201_CREATED)
+def create_improvement_by_unique_code(
+    unique_code: str,
+    improvement_data: schemas.ImprovementCreateByUniqueCode,
+    db: Session = Depends(get_db)
+):
+    """Create a new improvement record using defect unique code
+    
+    This endpoint allows vendors to submit improvements without authentication,
+    using only the defect's unique code.
+    """
+    # 根據唯一碼查找缺失
+    from app.defect.models import Defect
+    defect = db.query(Defect).filter(Defect.unique_code == unique_code).first()
+    if not defect:
+        raise HTTPException(status_code=404, detail="Defect not found with this unique code")
+    
+    # 創建完整的 ImprovementCreate 物件
+    complete_improvement_data = schemas.ImprovementCreate(
+        defect_id=defect.defect_id,
+        content=improvement_data.content,
+        submitter_id=improvement_data.submitter_id,
+        improvement_date=improvement_data.improvement_date
+    )
+    
+    # 如果有指定負責廠商，可以將其設為提交者
+    if defect.responsible_vendor_id and not complete_improvement_data.submitter_id:
+        from app.vendor.models import Vendor
+        vendor = db.query(Vendor).filter(Vendor.vendor_id == defect.responsible_vendor_id).first()
+        if vendor and hasattr(vendor, 'user_id') and vendor.user_id:
+            complete_improvement_data.submitter_id = vendor.user_id
+    
+    return crud.create_improvement(db=db, improvement=complete_improvement_data)
+
 @router.get("/{improvement_id}", response_model=schemas.ImprovementOut)
 def read_improvement(
     improvement_id: int,

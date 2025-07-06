@@ -49,6 +49,12 @@ def create_improvement(db: Session, improvement: ImprovementCreate) -> Improveme
         created_at=datetime.utcnow()
     )
     db.add(db_improvement)
+    
+    # 更新缺失狀態為「待確認」
+    defect = db.query(Defect).filter(Defect.defect_id == improvement.defect_id).first()
+    if defect:
+        defect.status = "待確認"
+    
     db.commit()
     db.refresh(db_improvement)
     return db_improvement
