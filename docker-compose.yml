@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
+#    ports:
+#      - "8000:8000"
     volumes:
       - .:/app
       - ./static:/app/static
@@ -15,13 +15,13 @@ services:
     # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     command:  gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --log-level=info --access-logfile=-
     networks:
-      - app-network
+      - app-defect-network
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
     networks:
-      - app-network
+      - app-defect-network
     restart: unless-stopped
 
   test:
@@ -35,5 +35,5 @@ services:
       - DATABASE_URL=sqlite:///./test.db
 
 networks:
-  app-network:
+  app-defect-network:
     driver: bridge
