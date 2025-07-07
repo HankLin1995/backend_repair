@@ -265,12 +265,30 @@ def get_defect_details(
         ]
     # 照片
     if with_photos:
-        photos = (
+        # 先取得缺失的照片
+        defect_photos = (
             db.query(Photo)
             .filter(Photo.related_type == "defect")
             .filter(Photo.related_id == defect_id)
             .all()
         )
+        
+        # 取得該缺失所有改善的ID
+        improvement_ids = [improvement.improvement_id for improvement in defect_obj.improvements] if with_improvements else []
+        
+        # 如果有改善記錄，也取得改善的照片
+        improvement_photos = []
+        if improvement_ids:
+            improvement_photos = (
+                db.query(Photo)
+                .filter(Photo.related_type == "improvement")
+                .filter(Photo.related_id.in_(improvement_ids))
+                .all()
+            )
+        
+        # 合併兩種照片
+        all_photos = defect_photos + improvement_photos
+        
         defect_data["photos"] = [
             {
                 "photo_id": photo.photo_id,
@@ -279,7 +297,7 @@ def get_defect_details(
                 "description": photo.description,
                 "image_url": photo.image_url,
                 "created_at": photo.created_at
-            } for photo in photos
+            } for photo in all_photos
         ]
     # 改善
     if with_improvements:

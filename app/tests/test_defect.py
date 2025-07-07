@@ -822,6 +822,48 @@ def test_update_defect_status_updates_linked_defects(db, test_project, test_user
     assert another_linked_defect.status == "改善中"
 
 
+# 新增測試案例：測試獲取缺失及其改善的相關照片
+def test_get_defect_with_improvement_photos(db, test_defect, test_improvement, test_photo):
+    # 為改善記錄添加一張照片
+    from app.photo.models import Photo
+    from datetime import datetime
+    
+    # 創建一個與改善相關的照片
+    improvement_photo = Photo(
+        related_type="improvement",
+        related_id=test_improvement.improvement_id,
+        description="Test improvement photo description",
+        image_url="/path/to/improvement_image.jpg",
+        created_at=datetime.utcnow()
+    )
+    db.add(improvement_photo)
+    db.commit()
+    db.refresh(improvement_photo)
+    
+    # 獲取缺失詳情，同時啟用照片和改善選項
+    defect_data = crud.get_defect_details(
+        db, 
+        test_defect.defect_id, 
+        with_photos=True, 
+        with_improvements=True
+    )
+    
+    # 基本檢查
+    assert defect_data is not None
+    assert defect_data["defect_id"] == test_defect.defect_id
+    
+    # 檢查照片資料，應該包含缺失照片和改善照片
+    assert "photos" in defect_data
+    assert len(defect_data["photos"]) >= 2  # 至少有兩張照片：一張缺失照片和一張改善照片
+    
+    # 確認缺失照片存在
+    assert any(photo["photo_id"] == test_photo.photo_id for photo in defect_data["photos"])
+    
+    # 確認改善照片存在
+    assert any(photo["photo_id"] == improvement_photo.photo_id for photo in defect_data["photos"])
+    assert any(photo["related_type"] == "improvement" for photo in defect_data["photos"])
+    assert any(photo["related_id"] == test_improvement.improvement_id for photo in defect_data["photos"])
+
 # 新增測試案例：API 更新缺失狀態時連動更新相關缺失單
 def test_api_update_defect_status_updates_linked_defects(client, db, test_project, test_user, test_defect_category, test_vendor):
     # 先建立一個等待中的缺失單
