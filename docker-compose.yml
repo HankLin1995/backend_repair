@@ -14,6 +14,16 @@ services:
       - DATABASE_URL=sqlite:///./defect.db
     # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     command:  gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --log-level=info --access-logfile=-
+    networks:
+      - app-network
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN}
+    networks:
+      - app-network
+    restart: unless-stopped
+
   test:
     build:
       context: .
@@ -23,3 +33,7 @@ services:
       - ./static:/app/static
     environment:
       - DATABASE_URL=sqlite:///./test.db
+
+networks:
+  app-network:
+    driver: bridge
